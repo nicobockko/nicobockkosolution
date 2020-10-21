@@ -1,0 +1,1358 @@
+
+from PyQt5 import QtCore, QtGui, QtWidgets
+from PyQt5.QtWidgets import QListView,QMessageBox
+from PyQt5.QtGui import QStandardItemModel,QStandardItem, QPixmap, QIcon
+
+from pandas import read_csv
+from openpyxl import load_workbook
+import datetime
+
+
+def show_msgbox(msg):
+    myicon = QPixmap()
+    myicon.load('C:/Users/junsik0914.choi/PycharmProjects/erricon.png')
+    error_dlg = QMessageBox()
+    error_dlg.setText(msg)
+    error_dlg.setWindowTitle('Error^_^')
+    error_dlg.setWindowIcon(QIcon(myicon))
+
+    error_dlg.setIconPixmap(myicon)
+    error_dlg.exec()
+
+def show_openbox(msg):
+    myicon = QPixmap()
+    myicon.load('C:/Users/junsik0914.choi/PycharmProjects/erricon.png')
+    error_dlg = QMessageBox()
+    error_dlg.setText(msg)
+    error_dlg.setWindowTitle('복붙 문제있어?')
+    error_dlg.setWindowIcon(QIcon(myicon))
+
+    error_dlg.setIconPixmap(myicon)
+    error_dlg.exec()
+
+
+class Ui_MainWindow(object):
+    def setupUi(self, MainWindow):
+        MainWindow.setObjectName("MainWindow")
+        MainWindow.resize(982, 628)
+        self.centralwidget = QtWidgets.QWidget(MainWindow)
+        self.centralwidget.setObjectName("centralwidget")
+        self.rawpocket45p = AAAbuttoncsv(self.centralwidget)
+        self.rawpocket45p.setGeometry(QtCore.QRect(50, 20, 256, 221))
+        font = QtGui.QFont()
+        font.setPointSize(10)
+        self.rawpocket45p.setFont(font)
+        self.rawpocket45p.setObjectName("rawpocket45p")
+        self.cellid1 = QtWidgets.QTextEdit(self.centralwidget)
+        self.cellid1.setEnabled(True)
+        self.cellid1.setGeometry(QtCore.QRect(330, 20, 151, 16))
+
+        font = QtGui.QFont()
+        font.setFamily("굴림")
+        font.setPointSize(8)
+        self.cellid1.setFont(font)
+        self.cellid1.setVerticalScrollBarPolicy(QtCore.Qt.ScrollBarAlwaysOff)
+        self.cellid1.setHorizontalScrollBarPolicy(QtCore.Qt.ScrollBarAlwaysOff)
+        self.cellid1.setTabChangesFocus(True)
+        self.cellid1.setObjectName("cellid1")
+        self.motherpocket = AAAbuttonxlsx(self.centralwidget)
+        self.motherpocket.setGeometry(QtCore.QRect(50, 290, 251, 111))
+        self.motherpocket.setObjectName("motherpocket")
+        self.btn_shoot = QtWidgets.QPushButton(self.centralwidget)
+        self.btn_shoot.setGeometry(QtCore.QRect(400, 490, 171, 71))
+        self.btn_shoot.setObjectName("btn_shoot")
+        self.label = QtWidgets.QLabel(self.centralwidget)
+        self.label.setGeometry(QtCore.QRect(70, 230, 201, 41))
+        self.label.setObjectName("label")
+        self.label_2 = QtWidgets.QLabel(self.centralwidget)
+        self.label_2.setGeometry(QtCore.QRect(70, 390, 171, 41))
+        self.label_2.setObjectName("label_2")
+        self.cellid2 = QtWidgets.QTextEdit(self.centralwidget)
+        self.cellid2.setGeometry(QtCore.QRect(330, 40, 151, 16))
+        font = QtGui.QFont()
+        font.setFamily("굴림")
+        font.setPointSize(8)
+        self.cellid2.setFont(font)
+        self.cellid2.setVerticalScrollBarPolicy(QtCore.Qt.ScrollBarAlwaysOff)
+        self.cellid2.setTabChangesFocus(True)
+        self.cellid2.setObjectName("cellid2")
+        self.label_3 = QtWidgets.QLabel(self.centralwidget)
+        self.label_3.setGeometry(QtCore.QRect(310, 20, 31, 16))
+        font = QtGui.QFont()
+        font.setFamily("맑은 고딕")
+        self.label_3.setFont(font)
+        self.label_3.setObjectName("label_3")
+        self.label_4 = QtWidgets.QLabel(self.centralwidget)
+        self.label_4.setGeometry(QtCore.QRect(310, 40, 31, 16))
+        font = QtGui.QFont()
+        font.setFamily("맑은 고딕")
+        self.label_4.setFont(font)
+        self.label_4.setObjectName("label_4")
+        self.label_5 = QtWidgets.QLabel(self.centralwidget)
+        self.label_5.setGeometry(QtCore.QRect(310, 60, 31, 16))
+        font = QtGui.QFont()
+        font.setFamily("맑은 고딕")
+        self.label_5.setFont(font)
+        self.label_5.setObjectName("label_5")
+        self.label_6 = QtWidgets.QLabel(self.centralwidget)
+        self.label_6.setGeometry(QtCore.QRect(310, 80, 31, 16))
+        font = QtGui.QFont()
+        font.setFamily("맑은 고딕")
+        self.label_6.setFont(font)
+        self.label_6.setObjectName("label_6")
+        self.label_7 = QtWidgets.QLabel(self.centralwidget)
+        self.label_7.setGeometry(QtCore.QRect(310, 200, 31, 16))
+        font = QtGui.QFont()
+        font.setFamily("맑은 고딕")
+        self.label_7.setFont(font)
+        self.label_7.setObjectName("label_7")
+        self.label_8 = QtWidgets.QLabel(self.centralwidget)
+        self.label_8.setGeometry(QtCore.QRect(310, 100, 31, 16))
+        font = QtGui.QFont()
+        font.setFamily("맑은 고딕")
+        self.label_8.setFont(font)
+        self.label_8.setObjectName("label_8")
+        self.label_9 = QtWidgets.QLabel(self.centralwidget)
+        self.label_9.setGeometry(QtCore.QRect(310, 120, 31, 16))
+        font = QtGui.QFont()
+        font.setFamily("맑은 고딕")
+        self.label_9.setFont(font)
+        self.label_9.setObjectName("label_9")
+        self.label_10 = QtWidgets.QLabel(self.centralwidget)
+        self.label_10.setGeometry(QtCore.QRect(310, 140, 31, 16))
+        font = QtGui.QFont()
+        font.setFamily("맑은 고딕")
+        self.label_10.setFont(font)
+        self.label_10.setObjectName("label_10")
+        self.label_11 = QtWidgets.QLabel(self.centralwidget)
+        self.label_11.setGeometry(QtCore.QRect(310, 160, 31, 16))
+        font = QtGui.QFont()
+        font.setFamily("맑은 고딕")
+        self.label_11.setFont(font)
+        self.label_11.setObjectName("label_11")
+        self.label_12 = QtWidgets.QLabel(self.centralwidget)
+        self.label_12.setGeometry(QtCore.QRect(310, 180, 31, 16))
+        font = QtGui.QFont()
+        font.setFamily("맑은 고딕")
+        self.label_12.setFont(font)
+        self.label_12.setObjectName("label_12")
+        self.label_13 = QtWidgets.QLabel(self.centralwidget)
+        self.label_13.setGeometry(QtCore.QRect(50, 760, 171, 41))
+        self.label_13.setText("")
+        self.label_13.setObjectName("label_13")
+        self.cellid3 = QtWidgets.QTextEdit(self.centralwidget)
+        self.cellid3.setGeometry(QtCore.QRect(330, 60, 151, 16))
+        font = QtGui.QFont()
+        font.setFamily("굴림")
+        font.setPointSize(8)
+        self.cellid3.setFont(font)
+        self.cellid3.setVerticalScrollBarPolicy(QtCore.Qt.ScrollBarAlwaysOff)
+        self.cellid3.setTabChangesFocus(True)
+        self.cellid3.setObjectName("cellid3")
+        self.cellid4 = QtWidgets.QTextEdit(self.centralwidget)
+        self.cellid4.setGeometry(QtCore.QRect(330, 80, 151, 16))
+        font = QtGui.QFont()
+        font.setFamily("굴림")
+        font.setPointSize(8)
+        self.cellid4.setFont(font)
+        self.cellid4.setVerticalScrollBarPolicy(QtCore.Qt.ScrollBarAlwaysOff)
+        self.cellid4.setTabChangesFocus(True)
+        self.cellid4.setObjectName("cellid4")
+        self.cellid5 = QtWidgets.QTextEdit(self.centralwidget)
+        self.cellid5.setGeometry(QtCore.QRect(330, 100, 151, 16))
+        font = QtGui.QFont()
+        font.setFamily("굴림")
+        font.setPointSize(8)
+        self.cellid5.setFont(font)
+        self.cellid5.setVerticalScrollBarPolicy(QtCore.Qt.ScrollBarAlwaysOff)
+        self.cellid5.setTabChangesFocus(True)
+        self.cellid5.setObjectName("cellid5")
+        self.cellid6 = QtWidgets.QTextEdit(self.centralwidget)
+        self.cellid6.setGeometry(QtCore.QRect(330, 120, 151, 16))
+        font = QtGui.QFont()
+        font.setFamily("굴림")
+        font.setPointSize(8)
+        self.cellid6.setFont(font)
+        self.cellid6.setVerticalScrollBarPolicy(QtCore.Qt.ScrollBarAlwaysOff)
+        self.cellid6.setTabChangesFocus(True)
+        self.cellid6.setObjectName("cellid6")
+        self.cellid7 = QtWidgets.QTextEdit(self.centralwidget)
+        self.cellid7.setGeometry(QtCore.QRect(330, 140, 151, 16))
+        font = QtGui.QFont()
+        font.setFamily("굴림")
+        font.setPointSize(8)
+        self.cellid7.setFont(font)
+        self.cellid7.setVerticalScrollBarPolicy(QtCore.Qt.ScrollBarAlwaysOff)
+        self.cellid7.setTabChangesFocus(True)
+        self.cellid7.setObjectName("cellid7")
+        self.cellid8 = QtWidgets.QTextEdit(self.centralwidget)
+        self.cellid8.setGeometry(QtCore.QRect(330, 160, 151, 16))
+        font = QtGui.QFont()
+        font.setFamily("굴림")
+        font.setPointSize(8)
+        self.cellid8.setFont(font)
+        self.cellid8.setVerticalScrollBarPolicy(QtCore.Qt.ScrollBarAlwaysOff)
+        self.cellid8.setTabChangesFocus(True)
+        self.cellid8.setObjectName("cellid8")
+        self.cellid9 = QtWidgets.QTextEdit(self.centralwidget)
+        self.cellid9.setGeometry(QtCore.QRect(330, 180, 151, 16))
+        font = QtGui.QFont()
+        font.setFamily("굴림")
+        font.setPointSize(8)
+        self.cellid9.setFont(font)
+        self.cellid9.setVerticalScrollBarPolicy(QtCore.Qt.ScrollBarAlwaysOff)
+        self.cellid9.setTabChangesFocus(True)
+        self.cellid9.setObjectName("cellid9")
+        self.cellid10 = QtWidgets.QTextEdit(self.centralwidget)
+        self.cellid10.setGeometry(QtCore.QRect(330, 200, 151, 16))
+        font = QtGui.QFont()
+        font.setFamily("굴림")
+        font.setPointSize(8)
+        self.cellid10.setFont(font)
+        self.cellid10.setVerticalScrollBarPolicy(QtCore.Qt.ScrollBarAlwaysOff)
+        self.cellid10.setTabChangesFocus(True)
+        self.cellid10.setObjectName("cellid10")
+        self.label_14 = QtWidgets.QLabel(self.centralwidget)
+        self.label_14.setGeometry(QtCore.QRect(700, 390, 221, 41))
+        self.label_14.setObjectName("label_14")
+        self.cellid1_11 = QtWidgets.QTextEdit(self.centralwidget)
+        self.cellid1_11.setGeometry(QtCore.QRect(320, 260, 151, 41))
+        font = QtGui.QFont()
+        font.setFamily("굴림")
+        font.setPointSize(8)
+        self.cellid1_11.setFont(font)
+        self.cellid1_11.setTabChangesFocus(True)
+        self.cellid1_11.setObjectName("cellid1_11")
+        self.cellid1_12 = QtWidgets.QTextEdit(self.centralwidget)
+        self.cellid1_12.setGeometry(QtCore.QRect(320, 340, 151, 41))
+        font = QtGui.QFont()
+        font.setFamily("굴림")
+        font.setPointSize(8)
+        self.cellid1_12.setFont(font)
+        self.cellid1_12.setTabChangesFocus(True)
+        self.cellid1_12.setObjectName("cellid1_12")
+        self.cellid1_13 = QtWidgets.QTextEdit(self.centralwidget)
+        self.cellid1_13.setGeometry(QtCore.QRect(410, 420, 151, 41))
+        font = QtGui.QFont()
+        font.setFamily("굴림")
+        font.setPointSize(8)
+        self.cellid1_13.setFont(font)
+        self.cellid1_13.setTabChangesFocus(True)
+        self.cellid1_13.setObjectName("cellid1_13")
+        self.label_15 = QtWidgets.QLabel(self.centralwidget)
+        self.label_15.setGeometry(QtCore.QRect(320, 240, 131, 16))
+        font = QtGui.QFont()
+        font.setFamily("맑은 고딕")
+        self.label_15.setFont(font)
+        self.label_15.setObjectName("label_15")
+        self.label_16 = QtWidgets.QLabel(self.centralwidget)
+        self.label_16.setGeometry(QtCore.QRect(320, 320, 161, 16))
+        font = QtGui.QFont()
+        font.setFamily("맑은 고딕")
+        self.label_16.setFont(font)
+        self.label_16.setObjectName("label_16")
+        self.reflectpocket = QtWidgets.QListWidget(self.centralwidget)
+        self.reflectpocket.setGeometry(QtCore.QRect(690, 290, 241, 111))
+        self.reflectpocket.setObjectName("reflectpocket")
+        self.label_17 = QtWidgets.QLabel(self.centralwidget)
+        self.label_17.setGeometry(QtCore.QRect(700, 230, 221, 41))
+        self.label_17.setObjectName("label_17")
+        self.elvddpocket = AAAbuttoncsvel(self.centralwidget)
+        self.elvddpocket.setGeometry(QtCore.QRect(680, 20, 256, 221))
+        self.elvddpocket.setObjectName("elvddpocket")
+        self.label_28 = QtWidgets.QLabel(self.centralwidget)
+        self.label_28.setGeometry(QtCore.QRect(410, 400, 161, 16))
+        font = QtGui.QFont()
+        font.setFamily("맑은 고딕")
+        self.label_28.setFont(font)
+        self.label_28.setObjectName("label_28")
+        self.cellid10_2 = QtWidgets.QTextEdit(self.centralwidget)
+        self.cellid10_2.setGeometry(QtCore.QRect(500, 200, 151, 16))
+        font = QtGui.QFont()
+        font.setFamily("굴림")
+        font.setPointSize(8)
+        self.cellid10_2.setFont(font)
+        self.cellid10_2.setVerticalScrollBarPolicy(QtCore.Qt.ScrollBarAlwaysOff)
+        self.cellid10_2.setTabChangesFocus(True)
+        self.cellid10_2.setObjectName("cellid10_2")
+        self.cellid1_2 = QtWidgets.QTextEdit(self.centralwidget)
+        self.cellid1_2.setEnabled(True)
+        self.cellid1_2.setGeometry(QtCore.QRect(500, 20, 151, 16))
+        font = QtGui.QFont()
+        font.setFamily("굴림")
+        font.setPointSize(8)
+        self.cellid1_2.setFont(font)
+        self.cellid1_2.setVerticalScrollBarPolicy(QtCore.Qt.ScrollBarAlwaysOff)
+        self.cellid1_2.setHorizontalScrollBarPolicy(QtCore.Qt.ScrollBarAlwaysOff)
+        self.cellid1_2.setTabChangesFocus(True)
+        self.cellid1_2.setObjectName("cellid1_2")
+        self.cellid8_2 = QtWidgets.QTextEdit(self.centralwidget)
+        self.cellid8_2.setGeometry(QtCore.QRect(500, 160, 151, 16))
+        font = QtGui.QFont()
+        font.setFamily("굴림")
+        font.setPointSize(8)
+        self.cellid8_2.setFont(font)
+        self.cellid8_2.setVerticalScrollBarPolicy(QtCore.Qt.ScrollBarAlwaysOff)
+        self.cellid8_2.setTabChangesFocus(True)
+        self.cellid8_2.setObjectName("cellid8_2")
+        self.cellid4_2 = QtWidgets.QTextEdit(self.centralwidget)
+        self.cellid4_2.setGeometry(QtCore.QRect(500, 80, 151, 16))
+        font = QtGui.QFont()
+        font.setFamily("굴림")
+        font.setPointSize(8)
+        self.cellid4_2.setFont(font)
+        self.cellid4_2.setVerticalScrollBarPolicy(QtCore.Qt.ScrollBarAlwaysOff)
+        self.cellid4_2.setTabChangesFocus(True)
+        self.cellid4_2.setObjectName("cellid4_2")
+        self.cellid7_2 = QtWidgets.QTextEdit(self.centralwidget)
+        self.cellid7_2.setGeometry(QtCore.QRect(500, 140, 151, 16))
+        font = QtGui.QFont()
+        font.setFamily("굴림")
+        font.setPointSize(8)
+        self.cellid7_2.setFont(font)
+        self.cellid7_2.setVerticalScrollBarPolicy(QtCore.Qt.ScrollBarAlwaysOff)
+        self.cellid7_2.setTabChangesFocus(True)
+        self.cellid7_2.setObjectName("cellid7_2")
+        self.cellid5_2 = QtWidgets.QTextEdit(self.centralwidget)
+        self.cellid5_2.setGeometry(QtCore.QRect(500, 100, 151, 16))
+        font = QtGui.QFont()
+        font.setFamily("굴림")
+        font.setPointSize(8)
+        self.cellid5_2.setFont(font)
+        self.cellid5_2.setVerticalScrollBarPolicy(QtCore.Qt.ScrollBarAlwaysOff)
+        self.cellid5_2.setTabChangesFocus(True)
+        self.cellid5_2.setObjectName("cellid5_2")
+        self.cellid2_2 = QtWidgets.QTextEdit(self.centralwidget)
+        self.cellid2_2.setGeometry(QtCore.QRect(500, 40, 151, 16))
+        font = QtGui.QFont()
+        font.setFamily("굴림")
+        font.setPointSize(8)
+        self.cellid2_2.setFont(font)
+        self.cellid2_2.setVerticalScrollBarPolicy(QtCore.Qt.ScrollBarAlwaysOff)
+        self.cellid2_2.setTabChangesFocus(True)
+        self.cellid2_2.setObjectName("cellid2_2")
+        self.cellid6_2 = QtWidgets.QTextEdit(self.centralwidget)
+        self.cellid6_2.setGeometry(QtCore.QRect(500, 120, 151, 16))
+        font = QtGui.QFont()
+        font.setFamily("굴림")
+        font.setPointSize(8)
+        self.cellid6_2.setFont(font)
+        self.cellid6_2.setVerticalScrollBarPolicy(QtCore.Qt.ScrollBarAlwaysOff)
+        self.cellid6_2.setTabChangesFocus(True)
+        self.cellid6_2.setObjectName("cellid6_2")
+        self.cellid9_2 = QtWidgets.QTextEdit(self.centralwidget)
+        self.cellid9_2.setGeometry(QtCore.QRect(500, 180, 151, 16))
+        font = QtGui.QFont()
+        font.setFamily("굴림")
+        font.setPointSize(8)
+        self.cellid9_2.setFont(font)
+        self.cellid9_2.setVerticalScrollBarPolicy(QtCore.Qt.ScrollBarAlwaysOff)
+        self.cellid9_2.setTabChangesFocus(True)
+        self.cellid9_2.setObjectName("cellid9_2")
+        self.cellid3_2 = QtWidgets.QTextEdit(self.centralwidget)
+        self.cellid3_2.setGeometry(QtCore.QRect(500, 60, 151, 16))
+        font = QtGui.QFont()
+        font.setFamily("굴림")
+        font.setPointSize(8)
+        self.cellid3_2.setFont(font)
+        self.cellid3_2.setVerticalScrollBarPolicy(QtCore.Qt.ScrollBarAlwaysOff)
+        self.cellid3_2.setTabChangesFocus(True)
+        self.cellid3_2.setObjectName("cellid3_2")
+        self.label_18 = QtWidgets.QLabel(self.centralwidget)
+        self.label_18.setGeometry(QtCore.QRect(660, 180, 31, 16))
+        font = QtGui.QFont()
+        font.setFamily("맑은 고딕")
+        self.label_18.setFont(font)
+        self.label_18.setObjectName("label_18")
+        self.label_19 = QtWidgets.QLabel(self.centralwidget)
+        self.label_19.setGeometry(QtCore.QRect(660, 200, 31, 16))
+        font = QtGui.QFont()
+        font.setFamily("맑은 고딕")
+        self.label_19.setFont(font)
+        self.label_19.setObjectName("label_19")
+        self.label_20 = QtWidgets.QLabel(self.centralwidget)
+        self.label_20.setGeometry(QtCore.QRect(660, 20, 31, 16))
+        font = QtGui.QFont()
+        font.setFamily("맑은 고딕")
+        self.label_20.setFont(font)
+        self.label_20.setObjectName("label_20")
+        self.label_21 = QtWidgets.QLabel(self.centralwidget)
+        self.label_21.setGeometry(QtCore.QRect(660, 100, 31, 16))
+        font = QtGui.QFont()
+        font.setFamily("맑은 고딕")
+        self.label_21.setFont(font)
+        self.label_21.setObjectName("label_21")
+        self.label_22 = QtWidgets.QLabel(self.centralwidget)
+        self.label_22.setGeometry(QtCore.QRect(660, 120, 31, 16))
+        font = QtGui.QFont()
+        font.setFamily("맑은 고딕")
+        self.label_22.setFont(font)
+        self.label_22.setObjectName("label_22")
+        self.label_23 = QtWidgets.QLabel(self.centralwidget)
+        self.label_23.setGeometry(QtCore.QRect(660, 160, 31, 16))
+        font = QtGui.QFont()
+        font.setFamily("맑은 고딕")
+        self.label_23.setFont(font)
+        self.label_23.setObjectName("label_23")
+        self.label_24 = QtWidgets.QLabel(self.centralwidget)
+        self.label_24.setGeometry(QtCore.QRect(660, 40, 31, 16))
+        font = QtGui.QFont()
+        font.setFamily("맑은 고딕")
+        self.label_24.setFont(font)
+        self.label_24.setObjectName("label_24")
+        self.label_25 = QtWidgets.QLabel(self.centralwidget)
+        self.label_25.setGeometry(QtCore.QRect(660, 60, 31, 16))
+        font = QtGui.QFont()
+        font.setFamily("맑은 고딕")
+        self.label_25.setFont(font)
+        self.label_25.setObjectName("label_25")
+        self.label_26 = QtWidgets.QLabel(self.centralwidget)
+        self.label_26.setGeometry(QtCore.QRect(660, 80, 31, 16))
+        font = QtGui.QFont()
+        font.setFamily("맑은 고딕")
+        self.label_26.setFont(font)
+        self.label_26.setObjectName("label_26")
+        self.label_27 = QtWidgets.QLabel(self.centralwidget)
+        self.label_27.setGeometry(QtCore.QRect(660, 140, 31, 16))
+        font = QtGui.QFont()
+        font.setFamily("맑은 고딕")
+        self.label_27.setFont(font)
+        self.label_27.setObjectName("label_27")
+        self.label_29 = QtWidgets.QLabel(self.centralwidget)
+        self.label_29.setGeometry(QtCore.QRect(510, 320, 161, 16))
+        font = QtGui.QFont()
+        font.setFamily("맑은 고딕")
+        self.label_29.setFont(font)
+        self.label_29.setObjectName("label_29")
+        self.cellid1_14 = QtWidgets.QTextEdit(self.centralwidget)
+        self.cellid1_14.setGeometry(QtCore.QRect(510, 260, 151, 41))
+        font = QtGui.QFont()
+        font.setFamily("굴림")
+        font.setPointSize(8)
+        self.cellid1_14.setFont(font)
+        self.cellid1_14.setTabChangesFocus(True)
+        self.cellid1_14.setObjectName("cellid1_14")
+        self.cellid1_15 = QtWidgets.QTextEdit(self.centralwidget)
+        self.cellid1_15.setGeometry(QtCore.QRect(510, 340, 151, 41))
+        font = QtGui.QFont()
+        font.setFamily("굴림")
+        font.setPointSize(8)
+        self.cellid1_15.setFont(font)
+        self.cellid1_15.setTabChangesFocus(True)
+        self.cellid1_15.setObjectName("cellid1_15")
+        self.label_30 = QtWidgets.QLabel(self.centralwidget)
+        self.label_30.setGeometry(QtCore.QRect(510, 240, 131, 16))
+        font = QtGui.QFont()
+        font.setFamily("맑은 고딕")
+        self.label_30.setFont(font)
+        self.label_30.setObjectName("label_30")
+        self.rownum9 = QtWidgets.QLabel(self.centralwidget)
+        self.rownum9.setGeometry(QtCore.QRect(30, 180, 21, 16))
+        font = QtGui.QFont()
+        font.setFamily("맑은 고딕")
+        self.rownum9.setFont(font)
+        self.rownum9.setObjectName("rownum9")
+        self.rownum5 = QtWidgets.QLabel(self.centralwidget)
+        self.rownum5.setGeometry(QtCore.QRect(30, 100, 21, 16))
+        font = QtGui.QFont()
+        font.setFamily("맑은 고딕")
+        self.rownum5.setFont(font)
+        self.rownum5.setObjectName("rownum5")
+        self.rownum6 = QtWidgets.QLabel(self.centralwidget)
+        self.rownum6.setGeometry(QtCore.QRect(30, 120, 21, 16))
+        font = QtGui.QFont()
+        font.setFamily("맑은 고딕")
+        self.rownum6.setFont(font)
+        self.rownum6.setObjectName("rownum6")
+        self.rownum1 = QtWidgets.QLabel(self.centralwidget)
+        self.rownum1.setGeometry(QtCore.QRect(30, 20, 21, 16))
+        font = QtGui.QFont()
+        font.setFamily("맑은 고딕")
+        self.rownum1.setFont(font)
+        self.rownum1.setObjectName("rownum1")
+        self.rownum10 = QtWidgets.QLabel(self.centralwidget)
+        self.rownum10.setGeometry(QtCore.QRect(30, 200, 21, 16))
+        font = QtGui.QFont()
+        font.setFamily("맑은 고딕")
+        self.rownum10.setFont(font)
+        self.rownum10.setObjectName("rownum10")
+        self.rownum2 = QtWidgets.QLabel(self.centralwidget)
+        self.rownum2.setGeometry(QtCore.QRect(30, 40, 21, 16))
+        font = QtGui.QFont()
+        font.setFamily("맑은 고딕")
+        self.rownum2.setFont(font)
+        self.rownum2.setObjectName("rownum2")
+        self.rownum7 = QtWidgets.QLabel(self.centralwidget)
+        self.rownum7.setGeometry(QtCore.QRect(30, 140, 21, 16))
+        font = QtGui.QFont()
+        font.setFamily("맑은 고딕")
+        self.rownum7.setFont(font)
+        self.rownum7.setObjectName("rownum7")
+        self.rownum3 = QtWidgets.QLabel(self.centralwidget)
+        self.rownum3.setGeometry(QtCore.QRect(30, 56, 21, 20))
+        font = QtGui.QFont()
+        font.setFamily("맑은 고딕")
+        self.rownum3.setFont(font)
+        self.rownum3.setObjectName("rownum3")
+        self.rownum8 = QtWidgets.QLabel(self.centralwidget)
+        self.rownum8.setGeometry(QtCore.QRect(30, 160, 21, 16))
+        font = QtGui.QFont()
+        font.setFamily("맑은 고딕")
+        self.rownum8.setFont(font)
+        self.rownum8.setObjectName("rownum8")
+        self.rownum4 = QtWidgets.QLabel(self.centralwidget)
+        self.rownum4.setGeometry(QtCore.QRect(30, 80, 21, 16))
+        font = QtGui.QFont()
+        font.setFamily("맑은 고딕")
+        self.rownum4.setFont(font)
+        self.rownum4.setObjectName("rownum4")
+        self.rownum4_2 = QtWidgets.QLabel(self.centralwidget)
+        self.rownum4_2.setGeometry(QtCore.QRect(940, 80, 31, 16))
+        font = QtGui.QFont()
+        font.setFamily("맑은 고딕")
+        self.rownum4_2.setFont(font)
+        self.rownum4_2.setObjectName("rownum4_2")
+        self.rownum7_2 = QtWidgets.QLabel(self.centralwidget)
+        self.rownum7_2.setGeometry(QtCore.QRect(940, 140, 31, 16))
+        font = QtGui.QFont()
+        font.setFamily("맑은 고딕")
+        self.rownum7_2.setFont(font)
+        self.rownum7_2.setObjectName("rownum7_2")
+        self.rownum1_2 = QtWidgets.QLabel(self.centralwidget)
+        self.rownum1_2.setGeometry(QtCore.QRect(940, 20, 31, 16))
+        font = QtGui.QFont()
+        font.setFamily("맑은 고딕")
+        self.rownum1_2.setFont(font)
+        self.rownum1_2.setObjectName("rownum1_2")
+        self.rownum3_2 = QtWidgets.QLabel(self.centralwidget)
+        self.rownum3_2.setGeometry(QtCore.QRect(940, 60, 31, 16))
+        font = QtGui.QFont()
+        font.setFamily("맑은 고딕")
+        self.rownum3_2.setFont(font)
+        self.rownum3_2.setObjectName("rownum3_2")
+        self.rownum8_2 = QtWidgets.QLabel(self.centralwidget)
+        self.rownum8_2.setGeometry(QtCore.QRect(940, 160, 31, 16))
+        font = QtGui.QFont()
+        font.setFamily("맑은 고딕")
+        self.rownum8_2.setFont(font)
+        self.rownum8_2.setObjectName("rownum8_2")
+        self.rownum6_2 = QtWidgets.QLabel(self.centralwidget)
+        self.rownum6_2.setGeometry(QtCore.QRect(940, 120, 31, 16))
+        font = QtGui.QFont()
+        font.setFamily("맑은 고딕")
+        self.rownum6_2.setFont(font)
+        self.rownum6_2.setObjectName("rownum6_2")
+        self.rownum5_2 = QtWidgets.QLabel(self.centralwidget)
+        self.rownum5_2.setGeometry(QtCore.QRect(940, 100, 31, 16))
+        font = QtGui.QFont()
+        font.setFamily("맑은 고딕")
+        self.rownum5_2.setFont(font)
+        self.rownum5_2.setObjectName("rownum5_2")
+        self.rownum10_2 = QtWidgets.QLabel(self.centralwidget)
+        self.rownum10_2.setGeometry(QtCore.QRect(940, 200, 31, 16))
+        font = QtGui.QFont()
+        font.setFamily("맑은 고딕")
+        self.rownum10_2.setFont(font)
+        self.rownum10_2.setObjectName("rownum10_2")
+        self.rownum9_2 = QtWidgets.QLabel(self.centralwidget)
+        self.rownum9_2.setGeometry(QtCore.QRect(940, 180, 31, 16))
+        font = QtGui.QFont()
+        font.setFamily("맑은 고딕")
+        self.rownum9_2.setFont(font)
+        self.rownum9_2.setObjectName("rownum9_2")
+        self.rownum2_2 = QtWidgets.QLabel(self.centralwidget)
+        self.rownum2_2.setGeometry(QtCore.QRect(940, 40, 31, 16))
+        font = QtGui.QFont()
+        font.setFamily("맑은 고딕")
+        self.rownum2_2.setFont(font)
+        self.rownum2_2.setObjectName("rownum2_2")
+        self.label_31 = QtWidgets.QLabel(self.centralwidget)
+        self.label_31.setGeometry(QtCore.QRect(20, 210, 31, 41))
+        self.label_31.setObjectName("label_31")
+        self.label_32 = QtWidgets.QLabel(self.centralwidget)
+        self.label_32.setGeometry(QtCore.QRect(940, 210, 31, 41))
+        self.label_32.setObjectName("label_32")
+        self.sheetname1 = QtWidgets.QTextEdit(self.centralwidget)
+        self.sheetname1.setGeometry(QtCore.QRect(40, 440, 111, 21))
+        self.sheetname1.setVerticalScrollBarPolicy(QtCore.Qt.ScrollBarAlwaysOff)
+        self.sheetname1.setTabChangesFocus(True)
+        self.sheetname1.setObjectName("sheetname1")
+        self.label_33 = QtWidgets.QLabel(self.centralwidget)
+        self.label_33.setGeometry(QtCore.QRect(20, 440, 16, 16))
+        font = QtGui.QFont()
+        font.setFamily("맑은 고딕")
+        self.label_33.setFont(font)
+        self.label_33.setObjectName("label_33")
+        self.label_34 = QtWidgets.QLabel(self.centralwidget)
+        self.label_34.setGeometry(QtCore.QRect(20, 470, 16, 16))
+        font = QtGui.QFont()
+        font.setFamily("맑은 고딕")
+        self.label_34.setFont(font)
+        self.label_34.setObjectName("label_34")
+        self.sheetname2 = QtWidgets.QTextEdit(self.centralwidget)
+        self.sheetname2.setGeometry(QtCore.QRect(40, 470, 111, 21))
+        self.sheetname2.setVerticalScrollBarPolicy(QtCore.Qt.ScrollBarAlwaysOff)
+        self.sheetname2.setTabChangesFocus(True)
+        self.sheetname2.setObjectName("sheetname2")
+        self.sheetname3 = QtWidgets.QTextEdit(self.centralwidget)
+        self.sheetname3.setGeometry(QtCore.QRect(40, 500, 111, 21))
+        self.sheetname3.setVerticalScrollBarPolicy(QtCore.Qt.ScrollBarAlwaysOff)
+        self.sheetname3.setTabChangesFocus(True)
+        self.sheetname3.setObjectName("sheetname3")
+        self.label_35 = QtWidgets.QLabel(self.centralwidget)
+        self.label_35.setGeometry(QtCore.QRect(20, 500, 16, 16))
+        font = QtGui.QFont()
+        font.setFamily("맑은 고딕")
+        self.label_35.setFont(font)
+        self.label_35.setObjectName("label_35")
+        self.label_36 = QtWidgets.QLabel(self.centralwidget)
+        self.label_36.setGeometry(QtCore.QRect(20, 530, 16, 16))
+        font = QtGui.QFont()
+        font.setFamily("맑은 고딕")
+        self.label_36.setFont(font)
+        self.label_36.setObjectName("label_36")
+        self.sheetname4 = QtWidgets.QTextEdit(self.centralwidget)
+        self.sheetname4.setGeometry(QtCore.QRect(40, 530, 111, 21))
+        self.sheetname4.setVerticalScrollBarPolicy(QtCore.Qt.ScrollBarAlwaysOff)
+        self.sheetname4.setTabChangesFocus(True)
+        self.sheetname4.setObjectName("sheetname4")
+        self.sheetname5 = QtWidgets.QTextEdit(self.centralwidget)
+        self.sheetname5.setGeometry(QtCore.QRect(40, 560, 111, 21))
+        self.sheetname5.setVerticalScrollBarPolicy(QtCore.Qt.ScrollBarAlwaysOff)
+        self.sheetname5.setTabChangesFocus(True)
+        self.sheetname5.setObjectName("sheetname5")
+        self.label_37 = QtWidgets.QLabel(self.centralwidget)
+        self.label_37.setGeometry(QtCore.QRect(20, 560, 16, 16))
+        font = QtGui.QFont()
+        font.setFamily("맑은 고딕")
+        self.label_37.setFont(font)
+        self.label_37.setObjectName("label_37")
+        self.label_38 = QtWidgets.QLabel(self.centralwidget)
+        self.label_38.setGeometry(QtCore.QRect(170, 440, 16, 16))
+        font = QtGui.QFont()
+        font.setFamily("맑은 고딕")
+        self.label_38.setFont(font)
+        self.label_38.setObjectName("label_38")
+        self.sheetname6 = QtWidgets.QTextEdit(self.centralwidget)
+        self.sheetname6.setGeometry(QtCore.QRect(190, 440, 111, 21))
+        self.sheetname6.setVerticalScrollBarPolicy(QtCore.Qt.ScrollBarAlwaysOff)
+        self.sheetname6.setTabChangesFocus(True)
+        self.sheetname6.setObjectName("sheetname6")
+        self.sheetname7 = QtWidgets.QTextEdit(self.centralwidget)
+        self.sheetname7.setGeometry(QtCore.QRect(190, 470, 111, 21))
+        self.sheetname7.setVerticalScrollBarPolicy(QtCore.Qt.ScrollBarAlwaysOff)
+        self.sheetname7.setTabChangesFocus(True)
+        self.sheetname7.setObjectName("sheetname7")
+        self.label_39 = QtWidgets.QLabel(self.centralwidget)
+        self.label_39.setGeometry(QtCore.QRect(170, 470, 16, 16))
+        font = QtGui.QFont()
+        font.setFamily("맑은 고딕")
+        self.label_39.setFont(font)
+        self.label_39.setObjectName("label_39")
+        self.label_40 = QtWidgets.QLabel(self.centralwidget)
+        self.label_40.setGeometry(QtCore.QRect(170, 500, 16, 16))
+        font = QtGui.QFont()
+        font.setFamily("맑은 고딕")
+        self.label_40.setFont(font)
+        self.label_40.setObjectName("label_40")
+        self.sheetname8 = QtWidgets.QTextEdit(self.centralwidget)
+        self.sheetname8.setGeometry(QtCore.QRect(190, 500, 111, 21))
+        self.sheetname8.setVerticalScrollBarPolicy(QtCore.Qt.ScrollBarAlwaysOff)
+        self.sheetname8.setTabChangesFocus(True)
+        self.sheetname8.setObjectName("sheetname8")
+        self.sheetname9 = QtWidgets.QTextEdit(self.centralwidget)
+        self.sheetname9.setGeometry(QtCore.QRect(190, 530, 111, 21))
+        self.sheetname9.setVerticalScrollBarPolicy(QtCore.Qt.ScrollBarAlwaysOff)
+        self.sheetname9.setTabChangesFocus(True)
+        self.sheetname9.setObjectName("sheetname9")
+        self.label_41 = QtWidgets.QLabel(self.centralwidget)
+        self.label_41.setGeometry(QtCore.QRect(170, 530, 16, 16))
+        font = QtGui.QFont()
+        font.setFamily("맑은 고딕")
+        self.label_41.setFont(font)
+        self.label_41.setObjectName("label_41")
+        self.label_42 = QtWidgets.QLabel(self.centralwidget)
+        self.label_42.setGeometry(QtCore.QRect(170, 560, 16, 16))
+        font = QtGui.QFont()
+        font.setFamily("맑은 고딕")
+        self.label_42.setFont(font)
+        self.label_42.setObjectName("label_42")
+        self.sheetname10 = QtWidgets.QTextEdit(self.centralwidget)
+        self.sheetname10.setGeometry(QtCore.QRect(190, 560, 111, 21))
+        self.sheetname10.setVerticalScrollBarPolicy(QtCore.Qt.ScrollBarAlwaysOff)
+        self.sheetname10.setTabChangesFocus(True)
+        self.sheetname10.setObjectName("sheetname10")
+        MainWindow.setCentralWidget(self.centralwidget)
+        self.menubar = QtWidgets.QMenuBar(MainWindow)
+        self.menubar.setGeometry(QtCore.QRect(0, 0, 982, 21))
+        self.menubar.setObjectName("menubar")
+        MainWindow.setMenuBar(self.menubar)
+        self.statusbar = QtWidgets.QStatusBar(MainWindow)
+        self.statusbar.setObjectName("statusbar")
+        MainWindow.setStatusBar(self.statusbar)
+
+        self.retranslateUi(MainWindow)
+        self.btn_shoot.clicked.connect(self.makethefile)
+
+        self.cellid1.textChanged.connect(self.getid1)
+        self.cellid2.textChanged.connect(self.getid2)
+        self.cellid3.textChanged.connect(self.getid3)
+        self.cellid4.textChanged.connect(self.getid4)
+        self.cellid5.textChanged.connect(self.getid5)
+        self.cellid6.textChanged.connect(self.getid6)
+        self.cellid7.textChanged.connect(self.getid7)
+        self.cellid8.textChanged.connect(self.getid8)
+        self.cellid9.textChanged.connect(self.getid9)
+        self.cellid10.textChanged.connect(self.getid10)
+
+        self.cellid1_2.textChanged.connect(self.getid1_)
+        self.cellid2_2.textChanged.connect(self.getid2_)
+        self.cellid3_2.textChanged.connect(self.getid3_)
+        self.cellid4_2.textChanged.connect(self.getid4_)
+        self.cellid5_2.textChanged.connect(self.getid5_)
+        self.cellid6_2.textChanged.connect(self.getid6_)
+        self.cellid7_2.textChanged.connect(self.getid7_)
+        self.cellid8_2.textChanged.connect(self.getid8_)
+        self.cellid9_2.textChanged.connect(self.getid9_)
+        self.cellid10_2.textChanged.connect(self.getid10_)
+
+        self.cellid1_11.textChanged.connect(self.who)
+        self.cellid1_12.textChanged.connect(self.when)
+        self.cellid1_13.textChanged.connect(self.rqid)
+        self.cellid1_14.textChanged.connect(self.who_)
+        self.cellid1_15.textChanged.connect(self.when_)
+
+        self.centralwidget.setTabOrder(self.cellid1, self.cellid2)
+        self.centralwidget.setTabOrder(self.cellid2, self.cellid3)
+        self.centralwidget.setTabOrder(self.cellid3, self.cellid4)
+        self.centralwidget.setTabOrder(self.cellid4, self.cellid5)
+        self.centralwidget.setTabOrder(self.cellid5, self.cellid6)
+        self.centralwidget.setTabOrder(self.cellid6, self.cellid7)
+        self.centralwidget.setTabOrder(self.cellid7, self.cellid8)
+        self.centralwidget.setTabOrder(self.cellid8, self.cellid9)
+        self.centralwidget.setTabOrder(self.cellid9, self.cellid10)
+        self.centralwidget.setTabOrder(self.cellid10, self.cellid1_2)
+        self.centralwidget.setTabOrder(self.cellid1_2, self.cellid2_2)
+        self.centralwidget.setTabOrder(self.cellid2_2, self.cellid3_2)
+        self.centralwidget.setTabOrder(self.cellid3_2, self.cellid4_2)
+        self.centralwidget.setTabOrder(self.cellid4_2, self.cellid5_2)
+        self.centralwidget.setTabOrder(self.cellid5_2, self.cellid6_2)
+        self.centralwidget.setTabOrder(self.cellid6_2, self.cellid7_2)
+        self.centralwidget.setTabOrder(self.cellid7_2, self.cellid8_2)
+        self.centralwidget.setTabOrder(self.cellid8_2, self.cellid9_2)
+        self.centralwidget.setTabOrder(self.cellid9_2, self.cellid10_2)
+        self.centralwidget.setTabOrder(self.cellid10_2, self.cellid1_11)
+        self.centralwidget.setTabOrder(self.cellid1_11, self.cellid1_12)
+        self.centralwidget.setTabOrder(self.cellid1_12, self.cellid1_14)
+        self.centralwidget.setTabOrder(self.cellid1_14, self.cellid1_15)
+        self.centralwidget.setTabOrder(self.cellid1_15, self.cellid1_13)
+
+
+        QtCore.QMetaObject.connectSlotsByName(MainWindow)
+
+    def retranslateUi(self, MainWindow):
+        _translate = QtCore.QCoreApplication.translate
+
+        MainWindow.setWindowTitle(_translate("MainWindow", "휘도데이터취합기 By Nicobockko Solution"))
+
+        self.cellid1.setHtml(_translate("MainWindow",
+                                        "<!DOCTYPE HTML PUBLIC \"-//W3C//DTD HTML 4.0//EN\" \"http://www.w3.org/TR/REC-html40/strict.dtd\">\n"
+                                        "<html><head><meta name=\"qrichtext\" content=\"1\" /><style type=\"text/css\">\n"
+                                        "p, li { white-space: pre-wrap; }\n"
+                                        "</style></head><body style=\" font-family:\'굴림\'; font-size:8pt; font-weight:400; font-style:normal;\">\n"
+                                        "<p style=\"-qt-paragraph-type:empty; margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;\"><br /></p></body></html>"))
+        self.btn_shoot.setText(_translate("MainWindow", "Shoot!"))
+        self.label.setText(_translate("MainWindow", "35p 휘도 Data 넣으세요(확장자 csv)"))
+        self.label_2.setText(_translate("MainWindow", "모파일 넣으세요(확장자.xlsx)"))
+        self.label_3.setText(_translate("MainWindow", "1"))
+        self.label_4.setText(_translate("MainWindow", "2"))
+        self.label_5.setText(_translate("MainWindow", "3"))
+        self.label_6.setText(_translate("MainWindow", "4"))
+        self.label_7.setText(_translate("MainWindow", "10"))
+        self.label_8.setText(_translate("MainWindow", "5"))
+        self.label_9.setText(_translate("MainWindow", "6"))
+        self.label_10.setText(_translate("MainWindow", "7"))
+        self.label_11.setText(_translate("MainWindow", "8"))
+        self.label_12.setText(_translate("MainWindow", "9"))
+        self.label_14.setText(_translate("MainWindow", "반사율 Data  넣으세요(확장자 csv)"))
+        self.label_15.setText(_translate("MainWindow", "측정자:"))
+        self.label_16.setText(_translate("MainWindow", "R/O(예시: 초기(월/일)"))
+        self.label_17.setText(_translate("MainWindow", "VDD가변 Data 넣으세요(확장자 csv)"))
+        self.label_28.setText(_translate("MainWindow", "의뢰번호"))
+        self.cellid1_2.setHtml(_translate("MainWindow",
+                                          "<!DOCTYPE HTML PUBLIC \"-//W3C//DTD HTML 4.0//EN\" \"http://www.w3.org/TR/REC-html40/strict.dtd\">\n"
+                                          "<html><head><meta name=\"qrichtext\" content=\"1\" /><style type=\"text/css\">\n"
+                                          "p, li { white-space: pre-wrap; }\n"
+                                          "</style></head><body style=\" font-family:\'굴림\'; font-size:8pt; font-weight:400; font-style:normal;\">\n"
+                                          "<p style=\"-qt-paragraph-type:empty; margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;\"><br /></p></body></html>"))
+        self.label_18.setText(_translate("MainWindow", "9"))
+        self.label_19.setText(_translate("MainWindow", "10"))
+        self.label_20.setText(_translate("MainWindow", "1"))
+        self.label_21.setText(_translate("MainWindow", "5"))
+        self.label_22.setText(_translate("MainWindow", "6"))
+        self.label_23.setText(_translate("MainWindow", "8"))
+        self.label_24.setText(_translate("MainWindow", "2"))
+        self.label_25.setText(_translate("MainWindow", "3"))
+        self.label_26.setText(_translate("MainWindow", "4"))
+        self.label_27.setText(_translate("MainWindow", "7"))
+        self.label_29.setText(_translate("MainWindow", "R/O(예시: 초기(월/일)"))
+        self.label_30.setText(_translate("MainWindow", "측정자:"))
+        self.rownum9.setText(_translate("MainWindow", ""))
+        self.rownum5.setText(_translate("MainWindow", ""))
+        self.rownum6.setText(_translate("MainWindow", ""))
+        self.rownum1.setText(_translate("MainWindow", ""))
+        self.rownum10.setText(_translate("MainWindow", ""))
+        self.rownum2.setText(_translate("MainWindow", ""))
+        self.rownum7.setText(_translate("MainWindow", ""))
+        self.rownum3.setText(_translate("MainWindow", ""))
+        self.rownum8.setText(_translate("MainWindow", ""))
+        self.rownum4.setText(_translate("MainWindow", ""))
+        self.rownum4_2.setText(_translate("MainWindow", ""))
+        self.rownum7_2.setText(_translate("MainWindow", ""))
+        self.rownum1_2.setText(_translate("MainWindow", ""))
+        self.rownum3_2.setText(_translate("MainWindow", ""))
+        self.rownum8_2.setText(_translate("MainWindow", ""))
+        self.rownum6_2.setText(_translate("MainWindow", ""))
+        self.rownum5_2.setText(_translate("MainWindow", ""))
+        self.rownum10_2.setText(_translate("MainWindow", ""))
+        self.rownum9_2.setText(_translate("MainWindow", ""))
+        self.rownum2_2.setText(_translate("MainWindow", ""))
+        self.label_31.setText(_translate("MainWindow", ""))
+        self.label_32.setText(_translate("MainWindow", ""))
+        self.label_33.setText(_translate("MainWindow", "1"))
+        self.label_34.setText(_translate("MainWindow", "2"))
+        self.label_35.setText(_translate("MainWindow", "3"))
+        self.label_36.setText(_translate("MainWindow", "4"))
+        self.label_37.setText(_translate("MainWindow", "5"))
+        self.label_38.setText(_translate("MainWindow", "6"))
+        self.label_39.setText(_translate("MainWindow", "7"))
+        self.label_40.setText(_translate("MainWindow", "8"))
+        self.label_41.setText(_translate("MainWindow", "9"))
+        self.label_42.setText(_translate("MainWindow", "10"))
+
+
+    def makethefile(self):
+        try:
+#           self.wb = openpyxl.load_workbook(ui.motherpocket.hi4[0])
+            self.wb = load_workbook(ui.motherpocket.hi4[0])
+            self.sheetlist = self.wb.sheetnames
+            print(self.sheetlist)
+            self.cellids = []
+
+            self.xdata = []
+            self.ydata = []
+            self.ldata = []
+
+            self.xdata_ = []
+            self.ydata_ = []
+            self.ldata_ = []
+
+            if 'FORM' in self.sheetlist:
+                self.wsdata = self.wb.active
+
+                if len(ui.rawpocket45p.hi4) > 0:
+                    for i in range(len(ui.rawpocket45p.hi4)):
+                        self.cellids.append(eval('self.celldi%s' % (i + 1)))
+                else:
+                    for i in range(len(ui.elvddpocket.hi4)):
+                        self.cellids.append(eval('self.celldi%s' % (i + 1)))
+
+                if len(ui.rawpocket45p.hi4)> 0:
+
+                    for i in range(len(ui.rawpocket45p.hi4)):
+                        locals()['ws%s' % (i + 1)] = self.wb.copy_worksheet(self.wsdata)
+                        eval('ws%s' % (i + 1)).title = eval('self.celldi%s' % (i + 1))
+                        print(eval('ws%s' % (i + 1)).title)
+                        print('ws%s' % (i + 1))
+
+
+
+                        if len(ui.rawpocket45p.hi4) > 0:
+
+                            locals()['csv%s' % (i + 1)] = read_csv(ui.rawpocket45p.hi4[i], skiprows=1)
+                            if not 'No.' in eval('csv%s' %(i+1)).columns:
+                                locals()['csv%s' % (i + 1)] = read_csv(ui.rawpocket45p.hi4[i],encoding = 'ISO-8859-1')
+                                eval('csv%s' %(i+1)).columns.values[6]='Lv'
+
+                            self.xdata1 = locals()['csv%s' % (i + 1)].x
+                            self.xdata = self.xdata1.tolist()
+                            self.ydata1 = locals()['csv%s' % (i + 1)].y
+                            self.ydata = self.ydata1.tolist()
+                            self.ldata1 = locals()['csv%s' % (i + 1)].Lv
+                            self.ldata = self.ldata1.tolist()
+                            self.dataset = [self.xdata, self.ydata, self.ldata]
+
+                            for datacolumns in self.dataset:
+                                for data, k in zip(datacolumns, range(len(datacolumns))):
+                                    eval('ws%s' % (i + 1)).cell(row=k + 4, column=self.dataset.index(datacolumns) + 4).value = data
+                                    print(data)
+                            eval('ws%s' % (i + 1)).cell(row=1, column=4).value = self.who
+                            eval('ws%s' % (i + 1)).cell(row=2, column=4).value = self.when
+                            eval('ws%s' % (i + 1)).cell(row=1, column=1).value = self.rqid
+
+
+
+                        if len(ui.elvddpocket.hi4) > 0:
+
+                           locals()['csv2%s' % (i + 1)] = read_csv(ui.elvddpocket.hi4[i], skiprows=1)
+                           if not 'No.' in eval('csv2%s.columns' % (i + 1)):
+                               locals()['csv2%s' % (i + 1)] = read_csv(ui.elvddpocket.hi4[i],encoding = 'ISO-8859-1')
+                               eval('csv2%s' % (i + 1)).columns.values[6] = 'Lv'
+                               #eval('csv2%s' % (i + 1)).rename({'Lv(cd/m²)': 'Lv'})
+                           self.xdata_1 = locals()['csv2%s' % (i + 1)].x
+                           self.xdata_ = self.xdata_1.tolist()
+                           self.ydata_1 = locals()['csv2%s' % (i + 1)].y
+                           self.ydata_ = self.ydata_1.tolist()
+                           self.ldata_1 = locals()['csv2%s' % (i + 1)].Lv
+                           self.ldata_ = self.ldata_1.tolist()
+                           self.dataset_ = [self.xdata_, self.ydata_, self.ldata_]
+
+                           for datacolumns in self.dataset_:
+                               for data, k in zip(datacolumns, range(len(datacolumns))):
+                                   eval('ws%s' % (i + 1)).cell(row=k + 43, column=self.dataset_.index(datacolumns) + 4).value = data
+                                   print(data)
+                           eval('ws%s' % (i + 1)).cell(row=40, column=4).value = self.who
+                           eval('ws%s' % (i + 1)).cell(row=41, column=4).value = self.when
+                           eval('ws%s' % (i + 1)).cell(row=40, column=1).value = self.rqid
+                else:
+                    for i in range(len(ui.elvddpocket.hi4)):
+                        locals()['ws%s' % (i + 1)] = self.wb.copy_worksheet(self.wsdata)
+                        eval('ws%s' % (i + 1)).title = eval('self.celldi%s' % (i + 1))
+                        print(eval('ws%s' % (i + 1)).title)
+                        print('ws%s' % (i + 1))
+
+                        if len(ui.rawpocket45p.hi4) > 0:
+
+                            locals()['csv%s' % (i + 1)] = read_csv(ui.rawpocket45p.hi4[i], skiprows=1)
+                            if not 'No.' in eval('csv%s' % (i + 1)).columns:
+                                locals()['csv%s' % (i + 1)] = read_csv(ui.rawpocket45p.hi4[i], encoding='ISO-8859-1')
+                                eval('csv%s' % (i + 1)).columns.values[6] = 'Lv'
+
+                            self.xdata1 = locals()['csv%s' % (i + 1)].x
+                            self.xdata = self.xdata1.tolist()
+                            self.ydata1 = locals()['csv%s' % (i + 1)].y
+                            self.ydata = self.ydata1.tolist()
+                            self.ldata1 = locals()['csv%s' % (i + 1)].Lv
+                            self.ldata = self.ldata1.tolist()
+                            self.dataset = [self.xdata, self.ydata, self.ldata]
+
+                            for datacolumns in self.dataset:
+                                for data, k in zip(datacolumns, range(len(datacolumns))):
+                                    eval('ws%s' % (i + 1)).cell(row=k + 4,
+                                                                column=self.dataset.index(datacolumns) + 4).value = data
+                                    print(data)
+                            eval('ws%s' % (i + 1)).cell(row=1, column=4).value = self.who
+                            eval('ws%s' % (i + 1)).cell(row=2, column=4).value = self.when
+                            eval('ws%s' % (i + 1)).cell(row=1, column=1).value = self.rqid
+
+                        if len(ui.elvddpocket.hi4) > 0:
+
+                            locals()['csv2%s' % (i + 1)] = read_csv(ui.elvddpocket.hi4[i], skiprows=1)
+                            if not 'No.' in eval('csv2%s.columns' % (i + 1)):
+                                locals()['csv2%s' % (i + 1)] = read_csv(ui.elvddpocket.hi4[i], encoding='ISO-8859-1')
+                                eval('csv2%s' % (i + 1)).columns.values[6] = 'Lv'
+                                # eval('csv2%s' % (i + 1)).rename({'Lv(cd/m²)': 'Lv'})
+                            self.xdata_1 = locals()['csv2%s' % (i + 1)].x
+                            self.xdata_ = self.xdata_1.tolist()
+                            self.ydata_1 = locals()['csv2%s' % (i + 1)].y
+                            self.ydata_ = self.ydata_1.tolist()
+                            self.ldata_1 = locals()['csv2%s' % (i + 1)].Lv
+                            self.ldata_ = self.ldata_1.tolist()
+                            self.dataset_ = [self.xdata_, self.ydata_, self.ldata_]
+
+                            for datacolumns in self.dataset_:
+                                for data, k in zip(datacolumns, range(len(datacolumns))):
+                                    eval('ws%s' % (i + 1)).cell(row=k + 43,
+                                                                column=self.dataset_.index(datacolumns) + 4).value = data
+                                    print(data)
+                            eval('ws%s' % (i + 1)).cell(row=40, column=4).value = self.who_
+                            eval('ws%s' % (i + 1)).cell(row=41, column=4).value = self.when_
+                            eval('ws%s' % (i + 1)).cell(row=40, column=1).value = self.rqid
+
+
+            else:
+                self.wsdata = self.wb.active
+                self.cellids = []
+                self.cellids_= []
+
+
+
+                for q in range(len(ui.elvddpocket.hi4)):
+                    self.cellids_.append(eval('self.celldi%s_' % (q + 1)))
+
+                for i in range(len(self.cellids_)):
+
+                    locals()['ws2%s' % (i + 1)] = self.wb[self.cellids_[i]]
+
+                    locals()['csv2%s' % (i + 1)] = read_csv(ui.elvddpocket.hi4[i], skiprows=1)
+                    if not 'No.' in eval('csv2%s.columns' % (i + 1)):
+                        locals()['csv2%s' % (i + 1)] = read_csv(ui.elvddpocket.hi4[i],encoding = 'ISO-8859-1')
+                        #eval('csv2%s' % (i + 1)).rename({'Lv(cd/m²)': 'Lv'})
+                        eval('csv2%s' % (i + 1)).columns.values[6] = 'Lv'
+
+
+                    self.xdata_1 = locals()['csv2%s' % (i + 1)].x
+                    self.xdata_ = self.xdata_1.tolist()
+                    self.ydata_1 = locals()['csv2%s' % (i + 1)].y
+                    self.ydata_ = self.ydata_1.tolist()
+                    self.ldata_1 = locals()['csv2%s' % (i + 1)].Lv
+                    self.ldata_ = self.ldata_1.tolist()
+                    self.dataset_ = [self.xdata_, self.ydata_, self.ldata_]
+                    self.getnumdata_= []
+                    self.row_ = locals()['ws2%s' % (i + 1)]['45']
+                    for cell in self.row_:
+                        self.getnumdata_.append(cell.value)
+
+                    self.nextcellnum_ = (len(self.getnumdata_)) - [i != None for i in list(reversed(self.getnumdata_))].index(True)
+
+                    eval('ws2%s' % (i + 1)).cell(row=40, column=self.nextcellnum_ + 1).value = self.who_
+                    eval('ws2%s' % (i + 1)).cell(row=41, column=self.nextcellnum_ + 1).value = self.when_
+
+                    for datacolumns in self.dataset_:
+                        for data, k in zip(datacolumns, range(len(datacolumns))):
+                            eval('ws2%s' % (i + 1)).cell(row=k + 43, column=self.dataset_.index(datacolumns) + self.nextcellnum_ + 1).value = data
+
+
+
+                for q in range(len(ui.rawpocket45p.hi4)):
+                    self.cellids.append(eval('self.celldi%s' % (q + 1)))
+
+                for i in range(len(self.cellids)):
+                    locals()['ws%s' % (i + 1)] = self.wb[self.cellids[i]]
+                    locals()['csv%s' % (i + 1)] = read_csv(ui.rawpocket45p.hi4[i], skiprows=1)
+                    if not 'No.' in eval('csv%s' %(i+1)).columns:
+                        locals()['csv%s' % (i + 1)] = read_csv(ui.rawpocket45p.hi4[i],encoding = 'ISO-8859-1')
+                        eval('csv%s' %(i+1)).columns.values[6]='Lv'
+
+
+                    print('csv%s' % (i + 1))
+                    print(ui.rawpocket45p.hi4[i])
+                    self.xdata1 = locals()['csv%s' % (i + 1)].x
+                    self.xdata = self.xdata1.tolist()
+                    self.ydata1 = locals()['csv%s' % (i + 1)].y
+                    self.ydata = self.ydata1.tolist()
+                    self.ldata1 = locals()['csv%s' % (i + 1)].Lv
+                    self.ldata = self.ldata1.tolist()
+                    self.dataset = [self.xdata, self.ydata, self.ldata]
+
+
+                    self.getnumdata = []
+                    self.row = locals()['ws%s' % (i + 1)]['6']
+
+
+                    for cell in self.row:
+                        self.getnumdata.append(cell.value)
+
+                    self.nextcellnum =(len(self.getnumdata)) - [i!=None for i in list(reversed(self.getnumdata))].index(True)
+
+                    eval('ws%s' % (i + 1)).cell(row=1, column=self.nextcellnum + 1 ).value = self.who
+                    eval('ws%s' % (i + 1)).cell(row=2, column=self.nextcellnum + 1).value = self.when
+
+
+                    for datacolumns in self.dataset:
+                        for data, k in zip(datacolumns, range(len(datacolumns))):
+                            eval('ws%s' % (i + 1)).cell(row=k + 4, column=self.dataset.index(datacolumns) + self.nextcellnum + 1 ).value = data
+
+
+
+
+            if 'FORM' in self.sheetlist:
+                self.wb.remove(self.wb['FORM'])
+
+            dt = datetime.datetime.now()
+            self.filename = 'D:\Private_Documents/'+self.rqid + '_'+ dt.strftime("%Y%m%d_%H%M%S")+'.xlsx'
+            self.motherfilename = []
+            self.wb.save(self.filename)
+
+        except IndexError:
+            show_msgbox('\n\n이상한 시도를 하지마세요\n  뭔가 잘못 됐어요 헤헤')
+            return
+
+        except ValueError:
+            show_msgbox('\n\n측정자 R/O 입력했어요?\n  어떻게 해요 헤헤')
+            return
+
+        except AttributeError:
+            show_msgbox('\n\n셀아이디 입력을 \n   확인해보세요 헤헤')
+            return
+
+        except TypeError:
+            show_msgbox('\n\ncsv 파일 넣었어요?\n   확인해보세요 헤헤')
+            return
+        except UnicodeDecodeError:
+            show_msgbox('\n\n파일 확장자 맞아요?\n   확인해보세요 헤헤')
+    # 드래그해서들어간변수 서로 막옮기기?
+    # 에러처리? 만약 csv나 xl파일 확장자 안맞는거 엉뚱한거넣을떄,
+    # 담은 파일겟수와 입력한 cell id 갯수가 일치하지않을때
+    # 최초로 파일만들때, 의뢰번호, 평가항목, 측정자, 측정시간 초기or HR 써넣고 cell 4B열에도 담기게 만들고
+    #입력파일 갯수대로 파일명 블록처리
+    # 모파일 만들땐 cellid는 아무거나라도 입력해야댐;;의뢰번호 평가항목 은 안써도되지만 측정자 측정시간 은 기입하도록하고 파일명만순서에 맞게 잘 해줘야함
+    # 드랍된셀 발생했을땐 어떻게처리하지;;?
+    # 만약에 여기 id썻다 지우면 ?변수로 자리 잡아먹고있나?
+    # ELVDD측정데이터는,,?
+    # 데이터 추가시에 모파일 에있는 셀중 반절은 데이터 안넣을거라던데...
+    # 추가할때도 셀아이디 입력하게시켜야겠다;
+    #ELVDD데이터만 있거나 휘도데이터만 있거나 할수도...
+
+    def getid1(self):
+        self.celldi1 = self.cellid1.toPlainText()
+
+    def getid2(self):
+        self.celldi2 = self.cellid2.toPlainText()
+
+    def getid3(self):
+        self.celldi3 = self.cellid3.toPlainText()
+
+    def getid4(self):
+        self.celldi4 = self.cellid4.toPlainText()
+
+    def getid5(self):
+        self.celldi5 = self.cellid5.toPlainText()
+
+    def getid6(self):
+        self.celldi6 = self.cellid6.toPlainText()
+
+    def getid7(self):
+        self.celldi7 = self.cellid7.toPlainText()
+
+    def getid8(self):
+        self.celldi8 = self.cellid8.toPlainText()
+
+    def getid9(self):
+        self.celldi9 = self.cellid9.toPlainText()
+
+    def getid10(self):
+        self.celldi10 = self.cellid10.toPlainText()
+
+
+
+    def getid1_(self):
+        self.celldi1_ = self.cellid1_2.toPlainText()
+
+    def getid2_(self):
+        self.celldi2_ = self.cellid2_2.toPlainText()
+
+    def getid3_(self):
+        self.celldi3_ = self.cellid3_2.toPlainText()
+
+    def getid4_(self):
+        self.celldi4_ = self.cellid4_2.toPlainText()
+
+    def getid5_(self):
+        self.celldi5_ = self.cellid5_2.toPlainText()
+
+    def getid6_(self):
+        self.celldi6_ = self.cellid6_2.toPlainText()
+
+    def getid7_(self):
+        self.celldi7_ = self.cellid7_2.toPlainText()
+
+    def getid8_(self):
+        self.celldi8_ = self.cellid8_2.toPlainText()
+
+    def getid9_(self):
+        self.celldi9_ = self.cellid9_2.toPlainText()
+
+    def getid10_(self):
+        self.celldi10_ = self.cellid10_2.toPlainText()
+
+
+
+
+    def who(self):
+        self.who = self.cellid1_11.toPlainText()
+        print(self.who)
+
+    def who_(self):
+        self.who_ = self.cellid1_14.toPlainText()
+
+    def when(self):
+        self.when = self.cellid1_12.toPlainText()
+
+    def when_(self):
+        self.when_ = self.cellid1_15.toPlainText()
+
+    def rqid(self):
+        self.rqid = self.cellid1_13.toPlainText()
+
+
+
+class AAAbuttoncsv(QListView):
+
+    def __init__(self, title):
+        super().__init__(title)
+        self.setAcceptDrops(True)
+        self.hi = []
+        self.hi4 = []
+
+    def dragEnterEvent(self, e):
+        e.acceptProposedAction()
+
+    def dragMoveEvent(self, e):
+        e.acceptProposedAction()
+
+    def dropEvent(self, e):
+        self.hi = []
+        self.hi4 = []
+        self.hi = e.mimeData().text()
+        self.hi = self.hi.replace('file:///', '')
+        self.hi4 = self.hi.split("\n")
+
+        model = QStandardItemModel()
+        for i in self.hi4:
+            model.appendRow(QStandardItem(i))
+        self.setModel(model)
+        self.hi4 = list(filter(None, self.hi4))
+        #드랍되면 드랍된 파일갯수 세고 csv 접근해서 행갯수 몇개인지 판단하고 이상한파일이면 에러처리
+
+        for i in range(10):
+            eval('ui.cellid%s' % (i + 1)).setEnabled(False)
+        for i in range(len(self.hi4)):
+            eval('ui.cellid%s' % (i+1)).setEnabled(True)
+
+
+        for i in range(10):
+            eval('ui.rownum%s' % (i + 1)).setText("")
+
+        for i in range(len(self.hi4)):
+            locals()['csv%s' % (i + 1)] = read_csv(self.hi4[i], skiprows=1)
+            if not 'No.' in eval('csv%s' % (i + 1)).columns:
+                locals()['csv%s' % (i + 1)] = read_csv(self.hi4[i], encoding='ISO-8859-1')
+                eval('csv%s' % (i + 1)).columns.values[6] = 'Lv'
+            rownum=len(eval('csv%s' % (i + 1)))
+            eval('ui.rownum%s'%(i+1)).setText(str(rownum))
+            print(len(eval('csv%s' % (i + 1))))
+
+class AAAbuttoncsvel(QListView):
+
+    def __init__(self, title):
+        super().__init__(title)
+        self.setAcceptDrops(True)
+        self.hi = []
+        self.hi4 = []
+
+    def dragEnterEvent(self, e):
+        e.acceptProposedAction()
+
+    def dragMoveEvent(self, e):
+        e.acceptProposedAction()
+
+    def dropEvent(self, e):
+
+        self.hi = []
+        self.hi4 = []
+        self.hi = e.mimeData().text()
+        self.hi = self.hi.replace('file:///', '')
+        self.hi4 = self.hi.split("\n")
+
+        model = QStandardItemModel()
+        for i in self.hi4:
+            model.appendRow(QStandardItem(i))
+        self.setModel(model)
+        self.hi4 = list(filter(None, self.hi4))
+        #드랍되면 드랍된 파일갯수 세고 csv 접근해서 행갯수 몇개인지 판단하고 이상한파일이면 에러처리
+
+        for i in range(10):
+            eval('ui.cellid%s_2' % (i + 1)).setEnabled(False)
+
+        if len(ui.motherpocket.hi)>0:
+             if not 'FORM' in ui.motherpocket.sheetlist:
+                 for i in range(10):
+                     eval('ui.cellid%s_2' % (i + 1)).setEnabled(False)
+                 for i in range(len(self.hi4)):
+                     eval('ui.cellid%s_2' % (i + 1)).setEnabled(True)
+        #         for i in range(len(self.hi4)):
+        #             eval('ui.cellid%s_2' % (i+1)).setEnabled(True)
+
+        for i in range(10) :
+            eval('ui.rownum%s_2' % (i + 1)).setText("")
+
+        for i in range(len(self.hi4)):
+            locals()['csv%s' % (i + 1)] = read_csv(self.hi4[i], skiprows=1)
+            if not 'No.' in eval('csv%s' % (i + 1)).columns:
+                locals()['csv%s' % (i + 1)] = read_csv(self.hi4[i], encoding='ISO-8859-1')
+                eval('csv%s' % (i + 1)).columns.values[6] = 'Lv'
+            rownum=len(eval('csv%s' % (i + 1)))
+            eval('ui.rownum%s_2'%(i+1)).setText(str(rownum))
+            print(len(eval('csv%s' % (i + 1))))
+
+
+
+
+
+
+class AAAbuttonxlsx(QListView):
+
+    def __init__(self, title):
+        super().__init__(title)
+        self.setAcceptDrops(True)
+        self.hi = []
+        self.hi4 = []
+
+    def dragEnterEvent(self, e):
+        e.acceptProposedAction()
+
+    def dragMoveEvent(self, e):
+        e.acceptProposedAction()
+
+    def dropEvent(self, e):
+        self.hi = e.mimeData().text()
+        self.hi = self.hi.replace('file:///', '')
+        self.hi4 = self.hi.split("\n")
+
+        model = QStandardItemModel()
+        for i in self.hi4:
+            model.appendRow(QStandardItem(i))
+        self.setModel(model)
+        self.hi4 = list(filter(None, self.hi4))
+
+        self.wb = load_workbook(ui.motherpocket.hi4[0])
+        self.sheetlist = self.wb.sheetnames
+
+
+        for i in range(10):
+            eval('ui.sheetname%s' % (i + 1)).setText("")
+        for i in range(len(self.sheetlist)):
+            eval('ui.sheetname%s' % (i + 1)).setText(str(self.sheetlist[i]))
+
+
+        for i in range(10):
+            eval('ui.cellid%s_2' % (i + 1)).setEnabled(True)
+            eval('ui.cellid%s' % (i + 1)).setEnabled(True)
+        if 'FORM' in self.sheetlist :
+            for i in range(10):
+                eval('ui.cellid%s_2' % (i + 1)).setEnabled(False)
+
+
+
+
+
+# self.cellid1.setEnabled(True)
+#
+#
+# myicon = QPixmap()
+# myicon.load("C:/test_mqtt/icon.png")
+#
+# self.lablepic = QtWidgets.QLabel(self.centralwidget)
+# self.lablepic.setGeometry(QtCore.QRect(670, 480, myicon.width(), myicon.height()))
+# self.lablepic.setPixmap(myicon)
+
+# self.lablepic.setText('aba')
+# self.lablepic.setObjectName("lablepic")
+
+
+if __name__ == "__main__":
+    import sys
+    app = QtWidgets.QApplication(sys.argv)
+    MainWindow = QtWidgets.QMainWindow()
+    ui = Ui_MainWindow()
+    ui.setupUi(MainWindow)
+
+    myicon = QPixmap()
+    myicon.load('C:/Users/junsik0914.choi/PycharmProjects/erricon.png')
+    MainWindow.setWindowIcon(QIcon(myicon))
+
+
+    MainWindow.show()
+    show_openbox("\n\nDesigned\n    By Nicobockko Solution")
+    sys.exit(app.exec_())
