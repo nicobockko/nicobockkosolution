@@ -1,0 +1,71 @@
+from PIL import Image
+import cv2
+import numpy as np
+
+
+im = Image.open('C://Users\m')
+
+
+ratio = 7
+
+# image normalization
+imarray=np.array(im)
+imarray = (imarray / 4095) * 255
+imarray = imarray.astype(np.uint8)
+imarray2 = cv2.resize(imarray, (imarray.shape[1]//ratio, imarray.shape[0]//ratio), interpolation=cv2.INTER_LINEAR)
+print(imarray.shape[1]//ratio, imarray.shape[0]//ratio)
+
+# background removal
+ids0 = np.where(imarray2 < 30)
+imarray2[ids0] = 0
+ids1 = np.where(imarray2 != 0)
+new_x_min = np.min(ids1[1])
+new_x_max = np.max(ids1[1])
+new_y_min = np.min(ids1[0])
+new_y_max = np.max(ids1[0])
+offset = 10
+imarray2 = imarray2[new_y_min+offset:new_y_max-offset, new_x_min+offset:new_x_max-offset]
+
+# smoothing
+blur = cv2.GaussianBlur(imarray2, (5, 5), 0.0)
+
+# threshold
+th2 = cv2.adaptiveThreshold(blur, 255, cv2.ADAPTIVE_THRESH_MEAN_C, cv2.THRESH_BINARY, 21, 1)
+# ret2, th2 = cv2.threshold(blur, 0, 255, cv2.THRESH_BINARY+cv2.THRESH_OTSU)
+
+# morphology
+m_kernel = np.ones((11, 11), np.uint8)
+m_result = cv2.morphologyEx(th2, cv2.MORPH_CLOSE, m_kernel)
+
+# invert
+m_result = cv2.bitwise_not(m_result)
+
+# labeling
+cnt, labels, stats, centroids = cv2.connectedComponentsWithStats(m_result)
+labeled = cv2.cvtColor(imarray2, cv2.COLOR_GRAY2BGR)
+sub_offset = 10
+profile_lines = []
+for i in range(1, cnt):
+    (x, y, w, h, area) = stats[i]
+    x = x - sub_offset
+    y = y - sub_offset
+    w = w + sub_offset
+    h = h + sub_offset
+    cv2.rectangle(labeled, (x, y, w, h), (0, 255, 255))
+    # cv2.putText(labeled, "POS :: %s" % centroids[i], (int(centroids[i][0]), int(centroids[i][1])), cv2.FONT_HERSHEY_SIMPLEX, 0.5, [255, 0, 0], 1, cv2.LINE_AA)
+
+    x0 = x, (y + h //2)
+    x1 = x + w, (y + h //2)
+    y0 = (x + w // 2), y
+    y1 = (x + w // 2), y + h
+    cv2.line(labeled, x0, x1, [0, 0, 255], 2)
+    cv2.line(labeled, y0, y1, [0, 0, 255], 2)
+    profile_lines.append([x0, x1, y0, y1])
+
+
+cv2.imshow('image', imarray2)
+cv2.imshow('threshold', th2)
+cv2.imshow('morph', m_result)
+cv2.imshow('labeling', labeled)
+
+ret = cv2.waitKey(0)
