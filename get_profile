@@ -1,0 +1,120 @@
+import numpy as np
+import cv2
+from PIL import Image
+from matplotlib import pyplot as plt
+
+im = Image.open('D://E6') #스무딩 전데이타
+ratio = 7
+
+# image normalization
+imarray = np.array(im)
+imarray_view = (imarray / 4095) * 255
+imarray_view = imarray_view.astype(np.uint8)
+imarray_view = cv2.resize(imarray_view, (imarray_view.shape[1]//ratio, imarray_view.shape[0]//ratio), interpolation=cv2.INTER_LINEAR)
+print(imarray_view.shape[1], imarray_view.shape[0])
+
+# smoothing x2
+imarray = cv2.GaussianBlur(imarray, (5, 5), 0.0)
+imarray = cv2.GaussianBlur(imarray, (5, 5), 0.0)
+
+# background removal
+ids0 = np.where(imarray < 780) #255기준 30그레이
+imarray[ids0] = 0
+ids1 = np.where(imarray != 0)
+new_x_min = np.min(ids1[1])
+new_x_max = np.max(ids1[1])
+new_y_min = np.min(ids1[0])
+new_y_max = np.max(ids1[0])
+offset = 60 # 원본기준 60개 오프셋
+imarray_cut = imarray[new_y_min+offset:new_y_max-offset, new_x_min+offset:new_x_max-offset]
+
+blur_mini = (imarray_cut/ 4095) * 255
+blur_mini = blur_mini.astype(np.uint8)
+blur_mini = cv2.resize(blur_mini, (blur_mini.shape[1]//ratio, blur_mini.shape[0]//ratio), interpolation=cv2.INTER_LINEAR) #(가로,세로)
+
+
+isDragging = False
+x0, y0, w, h = -1, -1, -1, -1
+blue, red = (255, 0, 0), (0, 0, 255)
+
+
+def onMouse(event, x, y, flags, param):
+    global isDragging, x0, y0, img
+    if event == cv2.EVENT_LBUTTONDOWN:
+        isDragging = True
+        x0 = x
+        y0 = y
+    elif event == cv2.EVENT_MOUSEMOVE:
+        if isDragging:
+            img_draw = blur_mini.copy()
+            cv2.rectangle(img_draw, (x0, y0), (x, y), blue, 2)
+            cv2.imshow('img', img_draw)
+            print(x,y)
+
+
+
+
+
+    elif event == cv2.EVENT_LBUTTONUP:
+        if isDragging:
+            isDragging = False
+            w = x - x0
+            h = y - y0
+            if w > 0 and h > 0:
+                img_draw = blur_mini.copy()
+                cv2.rectangle(img_draw, (x0, y0), (x, y), red, 2)
+                cv2.imshow('img', img_draw)
+                roi = blur_mini[y0:y0 + h, x0:x0 + w]
+                cv2.imshow('cropped', roi)
+
+
+                plt.subplot(121)
+                x_values = range(x0*ratio, (x0+w)*ratio)  # x축 지점의 값들
+                y_values = imarray_cut[((y0 + y0+h))*ratio //2][x0*ratio:(x0+w)*ratio]  # y축 지점의 값들
+                plt.plot(x_values, y_values)  # line 그래프를 그립니다
+
+                plt.subplot(122)
+                x_values = range(y0*ratio, (y0+h)*ratio)  # x축 지점의 값들
+                y_values =imarray_cut[y0*ratio:(y0+h)*ratio,(x0+x0+w)//2*ratio] # y축 지점의 값들
+                plt.plot(x_values, y_values)  # line 그래프를 그립니다
+                plt.show()  # 그래프를 화면에 보여줍니다
+
+
+                # cv2.moveWindow('cropped', 0, 0)
+            # cv2.imwrite('./cropped.png', roi)
+
+            else:
+                cv2.imshow('img', blur_mini)
+                print('drag should start from left-top side')
+
+
+
+
+cv2.imshow('img', blur_mini)
+cv2.setMouseCallback('img', onMouse)
+cv2.waitKey()
+cv2.destroyAllWindows()
+
+
+
+
+
+완료 : 1안 : 드래그하면 중심 가로선  중심세로선을 그어서 프로파일을뽑는다 
+     → 불량이 끝에 걸친거같으면 우째? 
+     → 우 하 로드래그아니라 어떤방향에서도 다 가능할수있을까?ㅎㅎ
+     →  이미지를 벗어나서 드래그를하면 ㅎㅎㅎ오또켕!
+
+2안 : 중심점을 클릭하면 가로세로로 대충 길이 프로파일 뽑는다
+→임계치는 사람이 정한다,/ 이거자동으로뽑아내기가 쉽지가않을듯;;?  
+
+
+완료 : 가로선,세로선 프로파일 뽑기 
+          →그래프 나오는 축 간격 숫자  좀 디테일하게 깝쭉거려야할듯?)
+          →y축은 회전시키는것도 괜찮을듯?)
+         
+프로파일 뽑아서 적당한 임계치를 어떻게 정하게할까? -> 미분을 활용해야할수도?)
+
+
+드래그 이미지 기준으로 주변 값 취득하기
+( x면 좌우 y면 상하 데이터 가져올건데 샘플링 사이즈를 얼마나게해야할까?)
+          값이 너무이상하진않은지 판단을 어찌할까 ?
