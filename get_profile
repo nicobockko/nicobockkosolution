@@ -3,7 +3,7 @@ import cv2
 from PIL import Image
 from matplotlib import pyplot as plt
 
-im = Image.open('D://E6') #스무딩 전데이타
+im = Image.open('') #스무딩 전데이타
 ratio = 7
 
 # image normalization
@@ -31,11 +31,11 @@ imarray_cut = imarray[new_y_min+offset:new_y_max-offset, new_x_min+offset:new_x_
 blur_mini = (imarray_cut/ 4095) * 255
 blur_mini = blur_mini.astype(np.uint8)
 blur_mini = cv2.resize(blur_mini, (blur_mini.shape[1]//ratio, blur_mini.shape[0]//ratio), interpolation=cv2.INTER_LINEAR) #(가로,세로)
-
+print(blur_mini.shape[1], blur_mini.shape[0])
 
 isDragging = False
 x0, y0, w, h = -1, -1, -1, -1
-blue, red = (255, 0, 0), (0, 0, 255)
+blue, red = (127, 0, 0), (127,0,0)
 
 
 def onMouse(event, x, y, flags, param):
@@ -46,37 +46,66 @@ def onMouse(event, x, y, flags, param):
         y0 = y
     elif event == cv2.EVENT_MOUSEMOVE:
         if isDragging:
+            x = 0 if x < 0 else x
+            x = len(blur_mini[0])-1 if x > len(blur_mini[0]) else x
+
+            y = 0 if y < 0 else y
+            y = len(blur_mini)-1if y > len(blur_mini) else y
+
             img_draw = blur_mini.copy()
-            cv2.rectangle(img_draw, (x0, y0), (x, y), blue, 2)
+            twox = [x0,x]
+            twoy = [y0,y]
+
+            cv2.rectangle(img_draw, (np.min(twox), np.min(twoy)), (np.max(twox), np.max(twoy)), blue, 1)
+            cv2.line(img_draw, (np.min(twox), int(np.average(twoy))), (np.max(twox), int(np.average(twoy))), 63,
+                     1)  # 가로줄 긋기
+            cv2.line(img_draw, (int(np.average(twox)), np.min(twoy)), (int(np.average(twox)), np.max(twoy)), 63,
+                     1)  # 세로줄을긋기
             cv2.imshow('img', img_draw)
-            print(x,y)
-
-
-
 
 
     elif event == cv2.EVENT_LBUTTONUP:
         if isDragging:
             isDragging = False
-            w = x - x0
-            h = y - y0
+
+            x = 0 if x < 0 else x
+            x = len(blur_mini[0])-1 if x > len(blur_mini[0]) else x
+
+            y = 0 if y < 0 else y
+            y = len(blur_mini)-1if y > len(blur_mini) else y
+
+            w = abs(x - x0)
+            h = abs(y - y0)
+            twox = [x0,x]
+            twoy = [y0,y]
+            mintwox = np.min(twox)
+            maxtwox = np.max(twox)
+            mintwoy = np.min(twoy)
+            maxtwoy = np.max(twoy)
+            print(x, y)
+
             if w > 0 and h > 0:
                 img_draw = blur_mini.copy()
-                cv2.rectangle(img_draw, (x0, y0), (x, y), red, 2)
+                cv2.rectangle(img_draw,(np.min(twox), np.min(twoy)), (np.max(twox), np.max(twoy)), red, 2)
+                cv2.line(img_draw, (np.min(twox), int(np.average(twoy))), (np.max(twox), int(np.average(twoy))), 63,
+                         1)  # 가로줄 긋기
+                cv2.line(img_draw, (int(np.average(twox)), np.min(twoy)), (int(np.average(twox)), np.max(twoy)), 63,
+                         1)  # 세로줄을긋기
                 cv2.imshow('img', img_draw)
-                roi = blur_mini[y0:y0 + h, x0:x0 + w]
+                roi = blur_mini[np.min(twoy):np.min(twoy) + h, np.min(twox): np.min(twox) + w]
                 cv2.imshow('cropped', roi)
 
-
                 plt.subplot(121)
-                x_values = range(x0*ratio, (x0+w)*ratio)  # x축 지점의 값들
-                y_values = imarray_cut[((y0 + y0+h))*ratio //2][x0*ratio:(x0+w)*ratio]  # y축 지점의 값들
+                x_values = range(np.min(twox)*ratio, (np.min(twox)+w)*ratio)  # x축 지점의 값들
+                y_values = imarray_cut[(np.min(twoy) + np.min(twoy)+h)*ratio //2][np.min(twox)*ratio:(np.min(twox)+w)*ratio]  # 원본이미지 x축데이터
                 plt.plot(x_values, y_values)  # line 그래프를 그립니다
 
                 plt.subplot(122)
-                x_values = range(y0*ratio, (y0+h)*ratio)  # x축 지점의 값들
-                y_values =imarray_cut[y0*ratio:(y0+h)*ratio,(x0+x0+w)//2*ratio] # y축 지점의 값들
-                plt.plot(x_values, y_values)  # line 그래프를 그립니다
+                x_values = range(np.min(twoy)*ratio, (np.min(twoy)+h)*ratio)  # x축 지점의 값들
+                y_values =imarray_cut[np.min(twoy)*ratio:(np.min(twoy)+h)*ratio,(np.min(twox)+np.min(twox)+w)//2*ratio] # 원본이미지 y축 데이터
+                plt.gca().invert_yaxis()
+                plt.plot(y_values, x_values)  # line 그래프를 그립니다
+
                 plt.show()  # 그래프를 화면에 보여줍니다
 
 
@@ -95,26 +124,103 @@ cv2.setMouseCallback('img', onMouse)
 cv2.waitKey()
 cv2.destroyAllWindows()
 
+#https://hyongdoc.tistory.com/355
 
 
 
+불량 이미지 
 
+패턴별로 있는데 어떻게하지? 기울기차이나 휘도차이 날꺼같은데 판정을,,흠,,
+
+알고리즘 파일을 다만들었어 그다음은어케판정하는지?
+ 어짜피 사람이 1차판단은할껀지?
+
+
+지금어떤 알고리즘이나 수식을 뱉기에 데이터가,,,충분하다고볼수있는지?ㅠㅠ
+
+
+이미지 자른거 리사이징하기 균일한 해상도로 2000x1000 예를들어 이렇게
+근데 이러면 불량크기라던지 왜곡되는걸?
+
+
+1. 카메라 비그네팅 보상을 해야한다! :비그네팅 왜생기는지부터 이해하자
+2. 이거말곤 없는지 엔비젼에도좀물어보기 
+
+---------------------------------------------------------------------------------------------
+
+-네모창 잡기- 
 완료 : 1안 : 드래그하면 중심 가로선  중심세로선을 그어서 프로파일을뽑는다 
-     → 불량이 끝에 걸친거같으면 우째? 
-     → 우 하 로드래그아니라 어떤방향에서도 다 가능할수있을까?ㅎㅎ
-     →  이미지를 벗어나서 드래그를하면 ㅎㅎㅎ오또켕!
-
-2안 : 중심점을 클릭하면 가로세로로 대충 길이 프로파일 뽑는다
-→임계치는 사람이 정한다,/ 이거자동으로뽑아내기가 쉽지가않을듯;;?  
+      완료  → 우 하 로드래그아니라 어떤방향에서도 다 가능할수있을까?ㅎㅎ 
+      완료  →  이미지를 벗어나서 드래그를하면 ㅎㅎㅎ오또켕!아마 이프문을걸어서 어떤값보다 높으면 그값이들어가게해야하나
+       완료  →네모에 중심선 얇게 박아보기  선긋기 메소드 이용해보기기기리리링
+        난이도 중  →크롭된 이미지 최소사이즈가 있나보다 -> 너무작으면확대하게해볼까;;? (크롭이미지 자동조절 하는법,, 확대일수도있고,,쩝)
+	               크롭된이미지를 윈도우의 중앙으로 오도록 
+                          (크롭이미지 자동조절 하는법,, 확대일수도있고,,윈도우 조절 가능하도록)
+        데이터를취득하는 라인을 잡을떄
+        이미지를 벗어나는영역을 쓸경우 어떻게 처리해야할까요?
+       가로로 벗어나게되면 x축값을 평균을써서 데이터를 읽게끔하면좋은데 
+          그 평균값이 이미지를 벗어나게되면 에러처리를 해줘야지 (팝업을 뜨게 한다던지)
+       어려운일은아닐수도있곘다 
 
 
 완료 : 가로선,세로선 프로파일 뽑기 
           →그래프 나오는 축 간격 숫자  좀 디테일하게 깝쭉거려야할듯?)
-          →y축은 회전시키는것도 괜찮을듯?)
-         
-프로파일 뽑아서 적당한 임계치를 어떻게 정하게할까? -> 미분을 활용해야할수도?)
+             -> 보조선을 긋는다던지 
+             -> x 그래프 y그래프 제목을 단다던지 
+                 x 그래프랑 y그래프 간격조정을 좀 한다던지  
+             -> x축 y축 레이블을 한다던지 
+        완료 →y축은 회전시키는것도 괜찮을듯?)
+        완료 → y축값 반전도 시키기 가시화좋게
+              → 기존차트를 안꺼도 데이터 나오게 
+              → 차트에 마우스가져다대면 라인을 그려주도록,,,,  
+LV2  프로파일이 나오면  최소값 혹은 최대값을 찾아서  중심점이라고 정의하고, 
+      좌측으로 스레시홀드, 우측으로 스레시홀드를 찾아내서
+      그 해당점 보다 작은거나 큰 값을 가지는거중에제일 좌측값/  우측값 을 찾아내서 
+해당 방향으로의 불량 길이를 정의한다  
+
+그러고나서 불량의 끝점부터  시작되는 면적을 잡아서 휘도의 평균이나 중앙값을 잡아내고  
+ 아,, ,그러고보니 불량사이즈를 측정할 필요가없어지나??
+그냥 CR로만 판단할꺼면 .,.,..
 
 
-드래그 이미지 기준으로 주변 값 취득하기
+
+
+2안 : 중심점을 클릭하면 가로세로로 대충 길이 프로파일 뽑는다 가로 세로 길이는 어떻게 잡을까? 
+
+3안 :  응용해서 네모 긋고나서 중심점을 클릭하게 하는 것도 방법일 듯 
+
+
+
+
+프로파일 뽑아서 적당한 임계치를 어떻게 정하게할까? -> 미분을 활용해야할수도?)(쉽지않을거같은데)
+
+
+★별첨 
+데이터 검증 목적 :
+    중심점기준으로 주변 점들을 다 중심점으로 판단해서 데이터 뽑아본다음에
+    나오는 피쳐의 산포 확인해보기
+    주변 휘도를 취득하는것도 여러경우의수로 데이터가져와서 갖은조합 산포 확인해보기 
+
+   그래프에서 마우스 갖다 대면 가로선 세로선 나타나게 해서  스레시홀드 잡게하는것도 방법일듯
+     그러고나면 주변휘도 평균도 네모기준으로 좀 벗어나는곳으로 잡게끔 ,,,
+      뭐네모 기준으로 적당한위치에 데이터를 겟 해서 
+    값이  NULL값이있거나뭐 그러면 날리면되지않나 
+       이미지 픽셀에 벗어나는 영역을 보려고하면 무슨일이 일어날까?
+
+
+드래그 이미지 기준으로 주변 값 취득하기 ->흠,,,
 ( x면 좌우 y면 상하 데이터 가져올건데 샘플링 사이즈를 얼마나게해야할까?)
-          값이 너무이상하진않은지 판단을 어찌할까 ?
+          값이 너무이상하면 버리는 판단을 기준을 어찌할까 ?
+만약 드래그 영역중 최소값이 음수면 
+당연히 판단 에서 제외하고 
+
+양수이긴한데 너무작은숫자여도 버리던지 뭐 그건알아서 처리하면될듯
+
+최대값이 이미지를 넘어가면 당연히 버리는 판단 
+최대값이 이미지크기보다 얼마안되도 알아서 
+
+그럼 주변밝기 하나만 측정 ㅇㅋ ㅋㅇㅋㅇㅋㅇㅋ
+
+
+
+ 
