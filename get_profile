@@ -3,31 +3,35 @@ import cv2
 from PIL import Image
 from matplotlib import pyplot as plt
 
-im = Image.open('') #스무딩 전데이타
+im = Image.open('D://') #스무딩 전데이타
 ratio = 7
 
-# image normalization
+
+
+
 imarray = np.array(im)
+# image normalization 일단 보여주기위한 다운스케일링
 imarray_view = (imarray / 4095) * 255
 imarray_view = imarray_view.astype(np.uint8)
 imarray_view = cv2.resize(imarray_view, (imarray_view.shape[1]//ratio, imarray_view.shape[0]//ratio), interpolation=cv2.INTER_LINEAR)
-print(imarray_view.shape[1], imarray_view.shape[0])
-
-# smoothing x2
+# smoothing x2  원소스 5x5필터 적용 가우시안필터
 imarray = cv2.GaussianBlur(imarray, (5, 5), 0.0)
 imarray = cv2.GaussianBlur(imarray, (5, 5), 0.0)
 
-# background removal
-ids0 = np.where(imarray < 780) #255기준 30그레이
+# background removal 원소스 데이터에서 이미지 자르기
+ids0 = np.where(imarray < 780) #255기준 30수준
 imarray[ids0] = 0
 ids1 = np.where(imarray != 0)
 new_x_min = np.min(ids1[1])
 new_x_max = np.max(ids1[1])
 new_y_min = np.min(ids1[0])
 new_y_max = np.max(ids1[0])
-offset = 60 # 원본기준 60개 오프셋
+offset = 60 # 원본기준 60개 오프셋주고 잘라내기
 imarray_cut = imarray[new_y_min+offset:new_y_max-offset, new_x_min+offset:new_x_max-offset]
+print(imarray_view.shape[1], imarray_view.shape[0])
+print(imarray_cut.shape[1], imarray_cut.shape[0])
 
+#잘린이미지 에서 다시 보여주기위한 짓꺼리
 blur_mini = (imarray_cut/ 4095) * 255
 blur_mini = blur_mini.astype(np.uint8)
 blur_mini = cv2.resize(blur_mini, (blur_mini.shape[1]//ratio, blur_mini.shape[0]//ratio), interpolation=cv2.INTER_LINEAR) #(가로,세로)
@@ -62,6 +66,7 @@ def onMouse(event, x, y, flags, param):
             cv2.line(img_draw, (int(np.average(twox)), np.min(twoy)), (int(np.average(twox)), np.max(twoy)), 63,
                      1)  # 세로줄을긋기
             cv2.imshow('img', img_draw)
+            print(x,y)
 
 
     elif event == cv2.EVENT_LBUTTONUP:
@@ -91,14 +96,46 @@ def onMouse(event, x, y, flags, param):
                          1)  # 가로줄 긋기
                 cv2.line(img_draw, (int(np.average(twox)), np.min(twoy)), (int(np.average(twox)), np.max(twoy)), 63,
                          1)  # 세로줄을긋기
-                cv2.imshow('img', img_draw)
+
                 roi = blur_mini[np.min(twoy):np.min(twoy) + h, np.min(twox): np.min(twox) + w]
                 cv2.imshow('cropped', roi)
 
                 plt.subplot(121)
                 x_values = range(np.min(twox)*ratio, (np.min(twox)+w)*ratio)  # x축 지점의 값들
                 y_values = imarray_cut[(np.min(twoy) + np.min(twoy)+h)*ratio //2][np.min(twox)*ratio:(np.min(twox)+w)*ratio]  # 원본이미지 x축데이터
+                #print("가로선")
+                #print(y_values)
                 plt.plot(x_values, y_values)  # line 그래프를 그립니다
+
+
+                #주변휘도 취득 및 드로잉
+                lens=15
+                exps=15
+                mintwoy = exps if mintwoy - exps < 0 else mintwoy
+                #mintwox = lens if mintwox - lens < 0 else mintwox
+                #mintwoy = lens if mintwoy - lens < 0 else mintwoy
+                mintwox = exps if mintwox - exps < 0 else mintwox
+
+                maxtwoy = maxtwoy - exps if maxtwoy + exps > len(blur_mini) else maxtwoy
+                #maxtwox = 0 if maxtwox + lens > 0 else mintwox
+                #maxtwoy = 0 if maxtwoy + lens > 0 else mintwoy
+                maxtwox = maxtwox - exps if maxtwox + exps > len(blur_mini[0]) else maxtwox
+
+                print(maxtwox,maxtwoy)
+
+
+
+                right= imarray_cut[(mintwoy-exps)*ratio:(maxtwoy+exps)*ratio,maxtwox*ratio:(maxtwox+lens)*ratio]
+                left= imarray_cut[(mintwoy-exps)*ratio:(maxtwoy+exps)*ratio,(mintwox-lens)*ratio:mintwox*ratio]
+                top=imarray_cut[(mintwoy-lens)*ratio:(mintwoy*ratio),(mintwox-exps)*ratio:(maxtwox+exps)*ratio]
+                bottom=imarray_cut[maxtwoy*ratio:(maxtwoy+lens)*ratio, (mintwox-exps)*ratio:(maxtwox+exps)*ratio]
+                # 최소값이 0보다 작거나 최대값이 크면 그작업 또 해줘야댐
+                rightaver = np.average(right) # 우측
+                leftaver  = np.average(left)  # 좌측
+                xaver=(rightaver+leftaver)//2
+
+                cv2.rectangle(img_draw, (maxtwox,(mintwoy-exps)),((maxtwox+lens),(maxtwoy+exps)), red, 1)#우측
+                cv2.rectangle(img_draw, (mintwox-lens,(mintwoy-exps)),(mintwox,(maxtwoy+exps)), red, 1)#좌측
 
                 plt.subplot(122)
                 x_values = range(np.min(twoy)*ratio, (np.min(twoy)+h)*ratio)  # x축 지점의 값들
@@ -106,11 +143,21 @@ def onMouse(event, x, y, flags, param):
                 plt.gca().invert_yaxis()
                 plt.plot(y_values, x_values)  # line 그래프를 그립니다
 
+
+                bottomaver = np.average(bottom) # 아래
+                topaver =np.average(top)  #위
+                yaver=(topaver + bottomaver) // 2
+                cv2.rectangle(img_draw, (mintwox-exps,mintwoy-lens),(maxtwox+exps,mintwoy), red, 1)#위
+                cv2.rectangle(img_draw, (mintwox-exps,maxtwoy),(maxtwox+exps,maxtwoy+lens), red, 1)#아래
+                print(f"rigntaver: {rightaver} leftaver: {leftaver} topaver: {topaver} bottomaver: {bottomaver}")
+                print(f"rigntaver: {np.size(right)} leftaver: {np.size(left)} topaver:{np.size(top)} bottomaver: {np.size(bottom)}")
+
+                cv2.imshow('img', img_draw)
+                #mat plot lib 마우스 이벤트
+
+
+
                 plt.show()  # 그래프를 화면에 보여줍니다
-
-
-                # cv2.moveWindow('cropped', 0, 0)
-            # cv2.imwrite('./cropped.png', roi)
 
             else:
                 cv2.imshow('img', blur_mini)
@@ -119,6 +166,10 @@ def onMouse(event, x, y, flags, param):
 
 
 
+
+
+
+cv2.imshow('original', imarray_view)
 cv2.imshow('img', blur_mini)
 cv2.setMouseCallback('img', onMouse)
 cv2.waitKey()
@@ -128,24 +179,15 @@ cv2.destroyAllWindows()
 
 
 
-불량 이미지 
-
 패턴별로 있는데 어떻게하지? 기울기차이나 휘도차이 날꺼같은데 판정을,,흠,,
 
 알고리즘 파일을 다만들었어 그다음은어케판정하는지?
  어짜피 사람이 1차판단은할껀지?
 
-
 지금어떤 알고리즘이나 수식을 뱉기에 데이터가,,,충분하다고볼수있는지?ㅠㅠ
-
 
 이미지 자른거 리사이징하기 균일한 해상도로 2000x1000 예를들어 이렇게
 근데 이러면 불량크기라던지 왜곡되는걸?
-
-
-1. 카메라 비그네팅 보상을 해야한다! :비그네팅 왜생기는지부터 이해하자
-2. 이거말곤 없는지 엔비젼에도좀물어보기 
-
 ---------------------------------------------------------------------------------------------
 
 -네모창 잡기- 
@@ -219,70 +261,14 @@ LV2  프로파일이 나오면  최소값 혹은 최대값을 찾아서  중심�
 최대값이 이미지를 넘어가면 당연히 버리는 판단 
 최대값이 이미지크기보다 얼마안되도 알아서 
 
-그럼 주변밝기 하나만 측정 ㅇㅋ ㅋㅇㅋㅇㅋㅇㅋ
+그럼 주변휘도 하나만 측정 ㅇㅋ ㅋㅇㅋㅇㅋㅇㅋ
 
-
-가로선
-[1542 1541 1541 1541 1542 1543 1544 1545 1545 1546 1545 1543 1544 1549
- 1553 1554 1551 1548 1548 1549 1550 1549 1546 1541 1539 1539 1541 1543
- 1544 1543 1542 1541 1539 1538 1538 1540 1544 1548 1551 1551 1547 1542
- 1539 1540 1542 1545 1548 1549 1547 1546 1547 1546 1543 1538 1535 1534
- 1536 1538 1539 1538 1537 1536 1534 1532 1531 1533 1533 1532 1530 1527
- 1523 1521 1519 1519 1519 1520 1522 1522 1522 1521 1520 1518 1515 1511
- 1508 1506 1506 1508 1508 1506 1504 1502 1501 1500 1501 1503 1505 1504
- 1500 1494 1488 1487 1488 1490 1489 1486 1481 1476 1474 1476 1480 1482
- 1480 1477 1474 1473 1474 1472 1469 1465 1464 1463 1461 1458 1455 1453
- 1454 1455 1455 1454 1452 1449 1446 1444 1442 1440 1439 1440 1441 1442
- 1440 1438 1437 1437 1437 1436 1433 1430 1426 1424 1423 1422 1419 1415
- 1410 1408 1409 1410 1409 1407 1405 1404 1402 1400 1400 1401 1402 1402
- 1401 1401 1401 1401 1398 1394 1392 1391 1389 1388 1387 1385 1383 1379
- 1376 1375 1378 1381 1381 1377 1372 1368 1367 1367 1370 1374 1377 1377
- 1374 1371 1367 1364 1360 1356 1355 1355 1354 1354 1354 1356 1356 1355
- 1354 1352 1349 1346 1345 1346 1349 1351 1350 1349 1350 1353 1357 1359
- 1359 1357 1355 1354 1354 1355 1355 1355 1354 1355 1355 1354 1354 1357
- 1361 1364 1366 1367 1369 1370 1371 1370 1372 1376 1380 1384 1385 1383
- 1382 1385 1390 1394 1396 1396 1396 1397 1399 1400 1403 1407 1412 1414
- 1414 1415 1417 1420 1424 1428 1431 1433 1434 1434 1434 1434 1435 1436
- 1438 1440 1441 1443 1443 1442 1441 1441 1443 1446 1449 1453 1455 1454
- 1452 1450 1450 1453 1457 1461 1462 1460 1458 1456 1456 1458 1461 1461
- 1459 1456 1455 1456 1458 1462 1466 1467 1466 1465 1465 1466 1466 1464
- 1461 1460 1461 1465 1466 1464 1460 1457 1457 1458 1462 1467 1471 1472
- 1471 1469 1467 1466 1467 1467 1467 1463 1459 1458 1459 1460 1460 1460
- 1458 1455 1453 1453 1456 1457 1455 1452 1451 1452 1452 1450 1449 1448]
-세로선
-[1428 1429 1431 1433 1433 1431 1428 1424 1422 1422 1424 1426 1426 1425
- 1423 1422 1422 1424 1426 1428 1429 1431 1432 1434 1435 1435 1434 1433
- 1433 1434 1435 1436 1435 1433 1433 1435 1437 1437 1435 1434 1434 1435
- 1435 1436 1437 1437 1438 1438 1439 1441 1444 1447 1450 1452 1452 1450
- 1449 1449 1450 1451 1450 1449 1449 1450 1451 1452 1451 1450 1451 1453
- 1454 1453 1451 1449 1448 1447 1446 1446 1449 1451 1453 1453 1452 1452
- 1452 1453 1454 1456 1458 1459 1456 1452 1449 1449 1450 1452 1453 1452
- 1452 1452 1453 1454 1454 1454 1453 1453 1452 1452 1451 1451 1450 1448
- 1447 1446 1445 1443 1442 1442 1442 1443 1443 1443 1443 1443 1442 1440
- 1438 1437 1437 1437 1438 1437 1434 1431 1430 1430 1431 1434 1434 1430
- 1426 1425 1426 1425 1421 1416 1413 1412 1411 1410 1408 1407 1408 1408
- 1405 1401 1398 1396 1393 1391 1391 1392 1392 1391 1391 1392 1393 1391
- 1388 1386 1385 1385 1388 1391 1391 1388 1384 1382 1382 1383 1383 1382
- 1380 1379 1379 1381 1382 1383 1383 1383 1383 1383 1383 1381 1380 1380
- 1380 1380 1380 1381 1382 1383 1383 1384 1384 1382 1380 1378 1379 1380
- 1380 1378 1375 1374 1375 1377 1378 1377 1376 1377 1379 1381 1381 1379
- 1378 1378 1377 1376 1376 1379 1382 1382 1380 1377 1374 1372 1370 1371
- 1376 1380 1383 1383 1383 1382 1380 1379 1380 1382 1384 1386 1386 1387
- 1390 1394 1397 1397 1394 1391 1391 1394 1397 1398 1399 1399 1398 1397
- 1400 1404 1407 1407 1406 1406 1407 1409 1411 1412 1413 1416 1418 1421
- 1423 1426 1427 1427 1425 1423 1424 1425 1426 1428 1432 1437 1440 1441
- 1441 1441 1440 1441 1442 1444 1446 1447 1449 1453 1456 1458 1460 1462
- 1466 1468 1469 1468 1467 1467 1469 1473 1477 1480 1480 1480 1480 1481
- 1484 1486 1488 1489 1492 1498 1503 1505 1505 1505 1507 1508 1509 1511
- 1515 1519 1522 1522 1522 1521 1519 1519 1520 1523 1527 1531 1536 1539
- 1540 1540 1539 1539 1540 1542 1545 1549 1552 1554 1554 1554 1555 1556
- 1556 1555 1555 1557 1560 1561 1561 1561 1561 1561 1562 1564 1567 1568
- 1568 1567 1566 1566 1565 1564 1564 1565 1568 1569 1570 1570 1569 1570
- 1572 1574 1574 1572 1569 1568 1568 1570 1572 1573 1572 1569 1566 1564
- 1562 1560 1558 1557 1557 1558 1559 1562 1566 1568 1565 1560 1556 1555
- 1555 1557 1560 1563 1565 1564 1561 1557 1554 1553 1555 1558 1561 1564
- 1566 1567 1566 1567 1569 1572 1575 1574 1573 1572 1572 1573 1575 1576
- 1576 1576 1578 1580 1581 1581 1579]
-
-
+이미지 펴기 ?
+거리 계산하기
+ 유니포미티 3디 표현 
+시야각관련할만한거? 
+UI 프로그래밍을 디자이너에서 만들고 옮길때 가장 좋은방법?
+아니면 형이쓰는방법 추천?????
+차트도 어떤거쓰는게 좋을까?
  
+
