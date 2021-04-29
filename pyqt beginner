@@ -21,6 +21,6 @@ if __name__ == '__main__':
    sys.exit(app.exec_())
    
    
-   
+   출처 https://wikidocs.net/21920
    클래스고 뭐고 지금init이고뭐고 다 이해하고싶다
    super랑 
