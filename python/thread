@@ -1,0 +1,110 @@
+
+
+콘텐츠로 건너뛰기
+스크린 리더로 Gmail 사용하기
+in:sent 
+행아웃 미팅
+새 회의
+회의 참여
+행아웃
+
+187개 중 2개
+python mqtt + pyside2
+
+Sung-June Lim <lim8701@gmail.com>
+첨부파일
+2020년 6월 21일 (일) 오후 3:27
+cjs910955에게
+
+
+첨부파일 2개
+import sys
+from PySide2 import QtWidgets
+
+import paho.mqtt.client as mqtt
+import csv
+
+import WorkerThread
+
+
+TXT_WIDGET = None
+
+
+def on_connect(client, userdata, flags, rc):
+    if rc == 0:
+        print("connected OK")
+    else:
+        print("Bad connection Returned code=", rc)
+
+
+def on_disconnect(client, userdata, flags, rc=0):
+    print(str(rc))
+
+
+def on_publish(client, userdata, mid):
+    print("In on_pub callback mid= ", mid)
+
+
+def on_subscribe(client, userdata, mid, granted_qos):
+    print("subscribed: " + str(mid) + " " + str(granted_qos))
+
+
+def on_message(client, userdata, msg):
+    str_msg = str(msg.payload.decode("utf-8"))
+    print(str_msg)
+    TXT_WIDGET.append(str_msg)
+    csvfile = open("C:/test/test_mqtt.csv", 'a')
+    writer = csv.writer(csvfile)
+    writer.writerow([str_msg])
+    print("OK")
+    writer.close()
+
+
+def mqtt_loop(stop_obj, args):
+    client = mqtt.Client()
+    client.on_connect = on_connect
+    client.on_disconnect = on_disconnect
+    client.on_publish = on_publish
+    client.on_subscribe = on_subscribe
+    client.on_message = on_message
+    client.username_pw_set('test_scott', '1234')
+    client.connect('broker.mqttdashboard.com', 1883)
+    client.subscribe('testtopic/9919', 2)
+    client.loop_forever()
+
+
+if __name__ == "__main__":
+    app = QtWidgets.QApplication(sys.argv)
+
+    main_app = QtWidgets.QMainWindow()
+    layout1 = QtWidgets.QHBoxLayout()
+    main_widget = QtWidgets.QWidget()
+    main_widget.setLayout(layout1)
+    main_app.setCentralWidget(main_widget)
+
+    lbl1 = QtWidgets.QLabel('Incoming Msg : ')
+    txt1 = QtWidgets.QTextEdit()
+    txt1.setReadOnly(True)
+    layout1.addWidget(lbl1)
+    layout1.addWidget(txt1)
+    main_app.show()
+
+    TXT_WIDGET = txt1
+
+    # WorkerThread
+    W0 = WorkerThread.create_worker(0) #클래스 객채 생성을해 일단  숫자0은 워커의아이디 인데 나중에 아이디로관리할수도있기떄문에 ~ 특별하지않으면 일단 0으로,, 
+    W1
+             create_worker 는 리턴하는게 2개있는데 그거 리턴해서 W0에 담는다 이떄 워커랑 워커스레드 라는이름으로 객채가 생긴다(지역변수임)   
+             
+                      양식은 생성한객채 변수 W0 넣고, 돌리고싶은 함수 넣고, 그함수의인자 없으면넌, 스래드가 종료되면 쓸함수)
+    WorkerThread.start_worker(*W0, mqtt_loop, None,
+                              _finished_func=lambda: print("Finished"))
+                              
+           
+           
+    #  WorkerThread.start_worker(           
+           
+
+    app.exec_()
+
+
