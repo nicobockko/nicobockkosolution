@@ -1,0 +1,40 @@
+char buf[10];
+char str[10];
+
+
+float a= 11.12213;
+float b= 1.1122;
+
+String hi="";
+
+void setup()
+{
+Serial.begin(9600);
+  
+  
+  
+  
+dtostrf(a, 2, 2, buf);
+sprintf(str, ";%05s",buf);
+hi=hi+str;
+Serial.println(hi);
+Serial.println(hi.length());
+
+dtostrf(b, 2, 2, buf);
+sprintf(str, ";%05s",buf);
+hi=hi+str;
+Serial.println(hi);
+Serial.println(hi.length());
+  
+  
+  
+  
+}
+
+void loop()
+{
+
+  
+  
+  
+}
