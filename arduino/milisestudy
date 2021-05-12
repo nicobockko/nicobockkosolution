@@ -1,0 +1,96 @@
+출처 : https://m.blog.naver.com/PostView.nhn?blogId=roboholic84&logNo=220298978867&proxyReferer=https:%2F%2Fwww.google.com%2F
+
+
+
+
+아두이노에 존재하는 타이머 관련 함수중 millis() 라는 함수가 있습니다.
+
+
+
+이는 아두이노의 동작이 시작된 후로부터 경과된 시간을 millisecond( 1000분의 1초)단위로 나타내어 줍니다.
+
+
+
+최대치는 약 50일로 이 시간이 지나게되면 overflow라는 현상이 일어나게 됩니다.
+
+
+
+그럼 왜 이 함수를 쓰느냐?
+
+
+
+아두이노가 켜진 뒤 얼마나 지났는지 측정하기 위함도 있지만 복수의 작업을 하기위해서 자주 사용됩니다.
+
+
+
+아두이노에서 어떤 동작을 하고있더라도 millis() 의 리턴값은 흘러가기 떄문이죠.
+
+
+
+한가지 예로 아두이노의 기본 예제중 Blink 라는 예제가 있습니다.
+
+
+
+// the setup function runs once when you press reset or power the board
+void setup() {
+  // initialize digital pin 13 as an output.
+  pinMode(13, OUTPUT);
+}
+
+// the loop function runs over and over again forever
+void loop() {
+  digitalWrite(13, HIGH);   // turn the LED on (HIGH is the voltage level)
+  delay(1000);              // wait for a second
+  digitalWrite(13, LOW);    // turn the LED off by making the voltage LOW
+  delay(1000);              // wait for a second
+}
+
+
+이렇게 쓸 경우 저 delay시간인 1초동안은 아무것도 못하게됩니다.
+
+
+
+그런데 저 1초동안 뭔가 다른걸 해야한다?
+
+
+
+그러면 어떻게 해야할까요?
+
+
+
+해답은 millis() ;에 있습니다. 다음 코드를 보시죠.
+
+
+
+long time = millis() ;
+// the setup function runs once when you press reset or power the board
+void setup() {
+  // initialize digital pin 13 as an output.
+  pinMode(13, OUTPUT);
+}
+
+// the loop function runs over and over again forever
+void loop() {
+  if (time + 1000 < millis()) {
+    digitalWrite(13, HIGH) ;
+  }
+  if (time + 2000 < millis()) {
+    time = millis() ;
+    digitalWrite(13, LOW) ;
+  }
+}
+
+
+위 코드는 Blink예제와 똑같이 작동하는데 loop문 안에서 delay를 기다리지 않고 자유롭게 작동할 수 있습니다.
+
+
+
+스위치 입력을 받거나, 시리얼 모니터링을 하거나 여러가지를 할 수 있습니다.
+
+
+
+실제로 저 time이라는 변수를 여러개써서 각 시간마다 특정 동작이 되도록 몇개를 짤 수 있습니다.
+
+
+
+이렇게 하면 아두이노로도 동시에 여러가지 작업을 할 수 있겠죠?
