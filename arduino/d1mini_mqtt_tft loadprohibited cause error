@@ -1,0 +1,434 @@
+#include <Adafruit_GFX.h>    // Core graphics library
+#include <Adafruit_ST7735.h> // Hardware-specific library for ST7735
+#include <Adafruit_ST7789.h> // Hardware-specific library for ST7789
+#include <SPI.h>
+
+#include <ESP8266WiFi.h>
+#include <PubSubClient.h>
+
+#define TFT_CS         D0// 어짜피해당핀없어서 무시해도되는데 CS가뭐였더라 
+#define TFT_RST        D3// RESET 인데 RES 라고써잇기도하다                                             
+#define TFT_DC         D4//DC는 모하는건지모르겟다 
+
+extern "C" {
+#include "user_interface.h"
+#include "wpa2_enterprise.h"
+#include "c_types.h"
+}
+
+
+IPAddress local_IP(12, 92, 162, 23);
+IPAddress gateway(12, 92, 162, 1); 
+IPAddress subnet(255, 255, 254, 0);
+IPAddress primaryDNS(12, 92, 15, 21); //optional
+IPAddress secondaryDNS(12, 92, 15, 22); //optional
+IPAddress broker(11, 99, 54, 216);
+
+char buf[10];////float를 담을곳 
+char str[10];//buf를 캐릭터로 담을곳 
+char ssid[] = "TJWL_RLT";
+char identity[] = "12408280";
+char password[] = "sy092312!@";
+
+//const char* brokerUser = "YOURUSER";
+//const char* brokerPass = "YOURPASSWORD";
+
+const char* outTopic ="testtopic/9919";
+//const char* inTopic ="testtopic/9919";
+
+uint8_t target_esp_mac[6] = {0x64,0xE6,0x9C,0xA4,0xAE,0x30};
+WiFiClient espClient;
+PubSubClient client(espClient);
+
+
+int dataval;//values에 측정 데이터 갯수몇갠지 
+int len ;
+int column;
+int row;
+
+float value;//저항값을 의미한다
+int num =1023;//anlogread 값을 의미한다 
+int howmany=0; //데이터전송몇번수행했는지 기록 
+int val=0;
+
+
+Adafruit_ST7789 tft = Adafruit_ST7789(TFT_CS, TFT_DC, TFT_RST);
+
+void reconnect() {
+  while (!client.connected()) {
+    if (client.connect("11.99.54.216")) {
+      //브로커연결됨 O표시하기 
+      
+      tft.setTextColor(ST77XX_GREEN,ST77XX_BLACK); //여기서부터 세줄은 와이파이상태업데이트될때 활용 
+      tft.setCursor(72, 210);  //1캐릭터사이즈 12x15인듯하다  
+      tft.print("O");
+      
+      //Serial.print("00000000000000000000000000");
+      client.publish(outTopic,"hello world");
+      client.subscribe(outTopic);
+      //Serial.println("hello world pub done");
+      
+    } else {
+      tftprint_brokerdisconnect();
+  
+      //Serial.println("xxxxxxxxxxxxxxxxxxxxxxxxxxxx");
+      delay(3000);
+    }
+  }
+}
+
+void setup() {
+
+int ylen=17; //캐릭터길이 15이고 줄을 그려줄 1줄씩여유를 주는셈인가 상단으로는여유가없어보이는데 
+int xlen=61; 
+
+pinMode(D0,INPUT_PULLUP);
+pinMode(D1,INPUT_PULLUP);
+pinMode(D2,INPUT_PULLUP);
+ 
+  
+  tft.init(240, 240, SPI_MODE2);           // Init ST7789 240x240
+  tft.fillScreen(ST77XX_BLACK);
+  
+  tft.setTextSize(2);
+  tft.setTextColor(ST77XX_ORANGE,ST77XX_BLACK);
+  
+  tft.setCursor(0, 210);
+  tft.setTextColor(ST77XX_ORANGE,ST77XX_BLACK);
+  tft.print(" WiFi:");
+  
+  tft.setTextColor(ST77XX_RED,ST77XX_BLACK); //여기서부터 세줄은 와이파이상태업데이트될때 활용 
+  tft.setCursor(72, 210);  //1캐릭터사이즈 12x15인듯하다  
+  tft.print("X");
+  
+  tft.setTextColor(ST77XX_ORANGE,ST77XX_BLACK);
+  tft.setCursor(96, 210);
+  tft.print("Sent:");
+
+  tft.setTextColor(ST77XX_MAGENTA,ST77XX_BLACK); //여기서 네줄은 howmany캐릭터 업데이트할때활용 
+  tft.setCursor(156, 210);
+  tft.print(howmany);
+  tft.print("  ");
+  
+  tft.setTextColor(ST77XX_ORANGE,ST77XX_BLACK);
+  tft.setCursor(0, 225);//225에서글짜찍는게 딱떨어지니까,.,. 세로로 길이는 15인듯 글짜  
+  tft.print(" Ohm Meter by JunSik");
+  
+ for(int i=0; i<13;i++)//가로줄긋기
+ {
+   tft.drawFastHLine(0,ylen*i,240,ST77XX_WHITE);
+ }
+ 
+ for(int i=0; i<4;i++)//세로줄긋기
+ { 
+   tft.drawFastVLine(60*i,0,204,ST77XX_WHITE);
+ }
+   tft.drawFastVLine(239,0,204,ST77XX_WHITE);
+ 
+ num = 0;
+
+
+ WiFi.mode(WIFI_STA);
+ Serial.begin(115200);
+  //Serial.println("setup setup setup setup setup setup ");
+if (!WiFi.config(local_IP, gateway, subnet, primaryDNS, secondaryDNS)) {
+     //Serial.println("STA Failed to configure");
+    }
+  delay(1000);
+  Serial.setDebugOutput(true);
+  
+  wifi_set_opmode(STATION_MODE);
+  
+  struct station_config wifi_config;
+  memset(&wifi_config, 0, sizeof(wifi_config));
+  strcpy((char*)wifi_config.ssid, ssid);
+  strcpy((char*)wifi_config.password, password);
+  wifi_station_set_config(&wifi_config);
+  wifi_set_macaddr(STATION_IF,target_esp_mac);
+  wifi_station_set_wpa2_enterprise_auth(1);
+
+  wifi_station_clear_cert_key();
+  wifi_station_clear_enterprise_ca_cert();
+  wifi_station_clear_enterprise_identity();
+  wifi_station_clear_enterprise_username();
+  wifi_station_clear_enterprise_password();
+  wifi_station_clear_enterprise_new_password();
+  
+  wifi_station_set_enterprise_identity((uint8*)identity, strlen(identity));
+  wifi_station_set_enterprise_username((uint8*)identity, strlen(identity));
+  wifi_station_set_enterprise_password((uint8*)password, strlen((char*)password));
+
+  wifi_station_connect();
+  WiFi.begin(ssid); //connect to wifi
+  
+  while (WiFi.status() != WL_CONNECTED) {
+    delay(1000);
+    //Serial.print(".");
+         tft.setTextColor(ST77XX_RED,ST77XX_BLACK); //여기서부터 세줄은 와이파이상태업데이트될때 활용 
+        tft.setCursor(72, 210);  //1캐릭터사이즈 12x15인듯하다  
+        tft.print("X");
+  }
+
+  //Serial.println("WiFi connected");
+  //Serial.println("IP address: ");
+  //Serial.println(WiFi.localIP());
+        tft.setTextColor(ST77XX_BLUE,ST77XX_BLACK); //여기서부터 세줄은 와이파이상태업데이트될때 활용 
+        tft.setCursor(72, 210);  //1캐릭터사이즈 12x15인듯하다  
+        tft.print("O");
+
+  client.setServer(broker, 1883);
+
+
+  //Serial.println("setup done setup done setup done setup done");
+
+ 
+}
+
+void loop() {
+ static int ylen=17; //캐릭터길이 15이고 줄을 그려줄 1줄씩여유를 주는셈인가 상단으로는여유가없어보이는데 
+static int xlen=61; 
+static String values = F("");//데이터전송할때 사용될 스트링
+
+
+//Serial.println("loop loop loop loop loop loop ");
+  if (WiFi.status() == WL_CONNECTED) { //if we are connected to Eduroam network
+        tft.setTextColor(ST77XX_BLUE,ST77XX_BLACK); //여기서부터 세줄은 와이파이상태업데이트될때 활용 
+        tft.setCursor(72, 210);  //1캐릭터사이즈 12x15인듯하다  
+        tft.print("O");
+   }else if (WiFi.status() != WL_CONNECTED) { //if we lost connection, retry
+    WiFi.begin(ssid);    
+    //Serial.println("reconnecting");  
+     tftprint_wifidisconnect();
+  }
+  while (WiFi.status() != WL_CONNECTED) { //during lost connection, print dots
+   //tftprint_wifidisconnect();
+   delay(500);
+   //Serial.println("whilecon");
+     }
+
+  if (!client.connected()) {
+    reconnect();
+    //Serial.println("reconn");
+  }
+
+  client.loop();
+
+  getdata(); 
+  dataval=values.length()/5;
+  tft.setTextColor(ST77XX_WHITE,ST77XX_BLACK); //여기서 네줄은 howmany캐릭터 업데이트할때활용 
+  tft.setCursor(180, 210);
+  tft.print(str);
+  
+  
+  if(digitalRead(D0) == LOW)//측정!
+  {
+   if(dataval<48)
+  {
+  values= values+str;
+  len=values.length();
+  dataval=values.length()/5;
+  column = dataval%4;
+  row = dataval/4;
+    if(column==0)
+     {
+       column=4;
+       row=row-1;
+     }
+       tft.setTextColor(ST77XX_ORANGE,ST77XX_BLACK);
+       tft.setCursor(3+xlen*(column-1),1+ylen*(row));
+       tft.println(values.substring(len-4,len));
+       delay(500);
+   }
+
+  
+  }
+
+   if (digitalRead(D1)==LOW)//딜리트 키가 될꼬얌 
+   {
+   values=values.substring(0,values.length()-5);
+   //Serial.println(values);
+   
+      len=values.length()+5;
+      dataval=len/5;
+      column = dataval%4;
+      row = dataval/4;
+    if(column==0)//나머지가 0이면 컬럼이 4가되야하잖아  지울때도 마찬가지인데 
+     {
+       column=4;
+       row=row-1;
+     }
+       tft.setTextColor(ST77XX_ORANGE,ST77XX_BLACK);
+       tft.setCursor(3+xlen*(column-1),1+ylen*(row));
+       tft.println("    ");
+
+   delay(1000);
+
+   
+   }
+
+   if (digitalRead(D2)==LOW) //퍼블리시키가될꼬얌 
+   {
+    char pubvalues[300]; //퍼블리시할때 스트링 을 캐릭터로 바꿔서보내야댐 
+    values.toCharArray(pubvalues, values.length()+1);
+    client.publish(outTopic, pubvalues);
+    //Serial.println("pub done");
+    values = "";
+    value =0;
+    dataval=0;
+    column=0;
+    row=0;
+    num=0;
+    
+    howmany++;
+  tft.setTextColor(ST77XX_MAGENTA,ST77XX_BLACK); //여기서 네줄은 howmany캐릭터 업데이트할때활용 
+  tft.setCursor(156, 210);
+  tft.print(howmany);
+  tft.print("  ");
+     
+   for(int i=1 ; i<48; i++)
+   {
+      column = i%4;
+      row = i/4;
+    if(column==0)//나머지가 0이면 컬럼이 4가되야하잖아  지울때도 마찬가지인데 
+     {
+       column=4;
+       row=row-1;
+     }
+       tft.setTextColor(ST77XX_ORANGE,ST77XX_BLACK);
+       tft.setCursor(3+xlen*(column-1),1+ylen*(row));
+       tft.println("    ");
+    
+     }
+     }
+   
+
+  //Serial.println(dataval);
+
+  
+}
+
+
+
+
+void getdata()
+  {
+    
+  num= analogRead(A0);
+  value = 3.2*num/1023;
+  value = value/0.03846;
+  value = value- 0.9;
+
+  if(value>50)
+  {
+    value= 99.9;
+  }
+  dtostrf(value,2,1,buf);
+  sprintf(str,";%04s",buf);
+  
+  }
+
+void tftprint_wifidisconnect()
+{
+ tft.setTextColor(ST77XX_RED,ST77XX_BLACK); //여기서부터 세줄은 와이파이상태업데이트될때 활용 
+ tft.setCursor(72, 210);  //1캐릭터사이즈 12x15인듯하다  
+ tft.print("X");
+}
+
+void tftprint_brokerdisconnect()
+{
+  tft.setTextColor(ST77XX_ORANGE,ST77XX_BLACK); //여기서부터 세줄은 와이파이상태업데이트될때 활용 
+  tft.setCursor(72, 210);  //1캐릭터사이즈 12x15인듯하다  
+  tft.print("X");
+}
+----------------------------------------------------------------------------------------------------------------------
+
+Fatal exception 28(LoadProhibitedCause):
+epc1=0x402093a6, epc2=0x00000000, epc3=0x00000000, excvaddr=0x002c0040, depc=0x00000000
+
+--------------- CUT HERE FOR EXCEPTION DECODER ---------------
+
+Exception (28):
+epc1=0x402093a6 epc2=0x00000000 epc3=0x00000000 excvaddr=0x002c0040 depc=0x00000000
+
+>>>stack>>>
+
+ctx: cont
+sp: 3ffffc90 end: 3fffffc0 offset: 0190
+3ffffe20:  4024b737 00000000 3ffefaa8 4020544c  
+3ffffe30:  3fff0714 3ffef9f0 3ffefaa8 40209441  
+3ffffe40:  3fffdad0 00000000 3ffefaa8 402012f1  
+3ffffe50:  00000000 00550000 00000000 00000012  
+3ffffe60:  40225400 40225400 3ffee5e4 00000012  
+3ffffe70:  402253cb 3ffee560 00000012 3ffe96a4  
+3ffffe80:  00000000 00000000 0000001f 40100168  
+3ffffe90:  fffffffc 79e8bbd9 3fffc228 40105b0d  
+3ffffea0:  4000050c 0021faf3 3ffefd9c 3ffef98c  
+3ffffeb0:  40206377 00000030 0000001c ffffffff  
+3ffffec0:  40206377 3ffefdc4 00000001 00000001  
+3ffffed0:  00000000 00000000 00000000 fffffffe  
+3ffffee0:  00000160 3fffc6fc 00000001 3ffefc78  
+3ffffef0:  00000000 3fffdad0 3ffefc8c 00000030  
+3fffff00:  00000000 00000000 00000000 00000000  
+3fffff10:  39307973 32313332 00004021 00000000  
+3fffff20:  00000000 00000000 00000000 00000000  
+3fffff30:  00000000 00000000 00000000 00000000  
+3fffff40:  00000000 00000000 00000000 00000000  
+3fffff50:  00000000 00000000 00000000 00000000  
+3fffff60:  007a1200 479b57d5 40209c00 00feffff  
+3fffff70:  00000000 01a25c0c 40209cb8 17a25c0c  
+3fffff80:  00000000 00000000 00000001 40100168  
+3fffff90:  3fffdad0 00000000 3ffefc78 3ffefc8c  
+3fffffa0:  3fffdad0 00000000 3ffefc78 40206374  
+3fffffb0:  feefeffe feefeffe 3ffe8680 40100ced  
+<<<stack<<<
+
+--------------- CUT HERE FOR EXCEPTION DECODER ---------------
+
+ ets Jan  8 2013,rst cause:2, boot mode:(3,6)
+
+load 0x4010f000, len 3460, room 16 
+tail 4
+chksum 0xcc
+load 0x3fff20b8, len 40, room 4 
+tail 4
+chksum 0xc9
+csum 0xc9
+v00059280
+~ld
+ del if0
+usl
+ip:12.xx.xxx.xx,mask:255.255.254.0,gw:12.xx.xxx.x
+add if0
+WPA2 ENTERPRISE VERSION: [v2.0] enable
+scandone
+scandone
+scandone
+state: 0 -> 2 (b0)
+state: 2 -> 3 (0)
+state: 3 -> 5 (10)
+add 0
+aid 1
+cnt 
+Method private structure allocated failure
+EAP-PEAP: received 53 bytes encrypted data for Phase 2
+EAP-PEAP: received Phase 2: code=1 identifier=21 length=5
+EAP-PEAP: Phase 2 Request: type=1
+EAP-PEAP: received 85 bytes encrypted data for Phase 2
+EAP-PEAP: received Phase 2: code=1 identifier=22 length=32
+EAP-PEAP: Phase 2 Request: type=26
+EAP-PEAP: Selected Phase 2 EAP vendor 0 method 26
+EAP-MSCHAPV2: RX identifier 22 mschapv2_id 22
+EAP-MSCHAPV2: Generate Challenge Response
+EAP-PEAP: received 101 bytes encrypted data for Phase 2
+EAP-PEAP: received Phase 2: code=1 identifier=23 length=51
+EAP-PEAP: Phase 2 Request: type=26
+EAP-MSCHAPV2: RX identifier 23 mschapv2_id 22
+EAP-PEAP: received 53 bytes encrypted data for Phase 2
+EAP-PEAP: received Phase 2: code=1 identifier=24 length=11
+EAP-PEAP: Phase 2 Request: type=33
+
+connected with xxxx, channel 6
+ip:12.xx.xxx.xx,mask:255.255.254.0,gw:12.xx.xxx.x
+pm open,type:2 0
+
+
