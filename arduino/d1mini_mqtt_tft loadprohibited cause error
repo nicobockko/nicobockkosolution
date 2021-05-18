@@ -17,7 +17,7 @@ extern "C" {
 }
 
 
-IPAddress local_IP(12, 92, 162, 23);
+IPAddress local_IP(12, 92, xxx, xx);
 IPAddress gateway(12, 92, 162, 1); 
 IPAddress subnet(255, 255, 254, 0);
 IPAddress primaryDNS(12, 92, 15, 21); //optional
@@ -26,9 +26,9 @@ IPAddress broker(11, 99, 54, 216);
 
 char buf[10];////float를 담을곳 
 char str[10];//buf를 캐릭터로 담을곳 
-char ssid[] = "TJWL_RLT";
-char identity[] = "12408280";
-char password[] = "sy092312!@";
+char ssid[] = "xxxxxxxx";
+char identity[] = "xxxxxxxx";
+char password[] = "xxxxx";
 
 //const char* brokerUser = "YOURUSER";
 //const char* brokerPass = "YOURPASSWORD";
