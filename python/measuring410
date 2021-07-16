@@ -319,7 +319,7 @@ if __name__ == "__main__":
     app = QApplication(sys.argv)
     ca410 = CA410Control()
     myWindow = MyWindow()
-    myWindow.setWindowTitle("CA410 Measuring Program v0 - Innovation of QA")
+    myWindow.setWindowTitle("CA410 Measuring Program v0 - ")
 
     myicon = QPixmap()
     #myicon.load('C:/QCA410/UI/erricon.png')
