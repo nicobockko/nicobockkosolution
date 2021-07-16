@@ -1,0 +1,333 @@
+import os
+import sys
+from time import sleep
+import pandas as pd
+import numpy as np
+import serial
+import serial.tools.list_ports as sp
+from PyQt5.QtWidgets import *
+from PyQt5.QtWidgets import QMessageBox,QTableWidgetItem,QShortcut
+from PyQt5 import uic
+from PyQt5.QtGui import QPixmap, QIcon,QKeySequence
+
+import matplotlib.pyplot as plt
+from matplotlib.backends.backend_qt5agg import FigureCanvasQTAgg as FigureCanvas
+import WorkerThread
+
+'''
+욕심을 부리면 
+1.값변경에 관해서 컨트롤 젯트가 먹게끔.....
+2.영역복사 된게 table 에서 붙혀넣기되게할수있으까?
+
+-measure 버튼 누를때 통신 플래그 한번보기 
+- 프로그램 키면 통신 자동으로 찾아서 붙히기 붙히고 메시지or재로켈날리고 ok 돌아오는것까지확인하기  안붙으면 팝업  띄우고 계측기 꼽으면 팝업꺼지게 도되나 
+  아니면 그냥 팝업만띄우고 통신연결 버튼통해서 통신확인 다시하도록 ,
+- to csv 처리하기  csv처리하면 df저장되면서 값지워버리기?
+- 기존 데이터 불러올 수 있도록 하기? 
+
+ 한번 연결된 컴포트 상태를 확인할수있는 함수가 있나 ..
+특정 열 색깔 바꾸는법 찾아보기   self.xytable.horizontalHeader.setStyleSheet("background:rgb(30,30,30)")
+
+저장문제를,, ..측정이나 del 을 할때마다 df로 파일을  쓰고 닫는 짓을 할까,,?
+
+
+인스톨할때 ui파일,이미지 필요없게..?
+spec파일에 대해서도 좀알아봐야할거같다 ,,
+'''
+
+form_class = uic.loadUiType("/ca4100.ui")[0]
+
+def createDirectory(directory):
+    try:
+        if not os.path.exists(directory):
+            os.makedirs(directory)
+    except OSError:
+       show_msgbox('디랙토리 생성 실패')
+
+def show_msgbox(msg):
+    myicon = QPixmap()
+    #myicon.load('/erricon.png')
+    error_dlg = QMessageBox()
+    error_dlg.setText(msg)
+    error_dlg.setWindowTitle('Surprise~!')
+    error_dlg.setWindowIcon(QIcon(myicon))
+    error_dlg.setIconPixmap(myicon)
+    error_dlg.exec()
+def show_question():
+    error_dlg = QMessageBox()
+    result = error_dlg.question(error_dlg,'save to csv', '정말 저장하시겠습니까? \n 저장 후 화면 Data는 사라집니다',
+                    QMessageBox.Yes | QMessageBox.No)
+    if result == QMessageBox.Yes:
+        print("yes")
+        myWindow.saving()
+    else:
+        print('pass')
+
+class MyWindow(QMainWindow, form_class):
+    def __init__(self):
+        super().__init__()
+        logpath = '/log'
+        csvpath = '/madeCSV'
+        createDirectory(logpath)
+        createDirectory(csvpath)
+        self.setupUi(self)
+        self.setFixedSize(820,880)
+        # 그래프 표시 초기셋팅
+        self.fig, self.ax1 = plt.subplots()
+        self.canvas = FigureCanvas(self.fig)
+        self.pltvertical.addWidget(self.canvas)
+        self.ax1.set_xlabel('times')
+        self.ax1.set_ylabel('Lv', color='k')
+        self.ax1.tick_params(axis='y', labelcolor='k')
+        self.ax2 = self.ax1.twinx()  # instantiate a second axes that shares the same x-axis
+        self.ax2.set_ylabel('xy', color='m')  # we already handled the x-label with ax1
+        self.ax2.tick_params(axis='y', labelcolor='m')
+
+        #Qtable 데이터 복사
+        copyShortcut = QShortcut(QKeySequence.Copy,self.xytable)
+        copyShortcut.activated.connect(self.copy)
+        pasteShortcut = QShortcut(QKeySequence.Paste, self.xytable)
+        pasteShortcut.activated.connect(self.paste)
+
+        #오류방지를 위한 변수 초기하
+        self.rownum = -1
+        self.colnum = 0
+        self.flag, self.comflag = 0,0
+        #셀 정보 기본값 초기화
+        self.rqn_val, self.cid_val, self.ctg_val, self.who_val, self.rdo_val = 'empty','empty','empty','empty','empty'
+        #함수연결
+        self.cnt_btn.clicked.connect(self.cntckd)
+        self.zcal_btn.clicked.connect(self.zcalckd)
+        self.msr_btn.clicked.connect(self.msrckd)
+        self.csv_btn.clicked.connect(self.csvckd)
+        self.del_btn.clicked.connect(self.delckd)
+        self.rqn_txt.textChanged.connect(self.rqn)
+        self.cid_txt.textChanged.connect(self.cid)
+        self.ctg_txt.textChanged.connect(self.ctg)
+        self.who_txt.textChanged.connect(self.who)
+        self.rdo_txt.textChanged.connect(self.rdo)
+        self.xytable.cellChanged.connect(self.valchanged)
+        self.xytable.currentCellChanged.connect(self.getposition)
+
+        #컬럼명 담기
+        self.col = []
+        for i in range(self.xytable.columnCount()):
+            self.col.append(self.xytable.horizontalHeaderItem(i).text())
+        self.df = pd.DataFrame(columns=tuple(self.col))
+
+    def paste(self):
+        #구현 전
+        print('paste')
+    def copy(self):
+        selectedRangeList = self.xytable.selectedRanges()
+        if selectedRangeList == [] :
+            return
+        text = ""
+        selectedRange = selectedRangeList[0]
+        for i in range(selectedRange.rowCount()):
+            if i > 0:
+                text += "\n"
+            for j in range(selectedRange.columnCount()):
+                if j > 0:
+                    text += "\t"
+                itemA = self.xytable.item(selectedRange.topRow()+i,selectedRange.leftColumn()+j)
+                if itemA :
+                    text += itemA.text()
+        text += '\n'
+        QApplication.clipboard().setText(text)
+    def rqn(self):
+        self.rqn_val = self.rqn_txt.toPlainText()
+    def cid(self):
+        self.cid_val = self.cid_txt.toPlainText()
+    def ctg(self):
+        self.ctg_val = self.ctg_txt.toPlainText()
+    def who(self):
+        self.who_val = self.who_txt.toPlainText()
+    def rdo(self):
+        self.rdo_val = self.rdo_txt.toPlainText()
+
+    def pltupdate(self):
+        if len(self.df) >0:
+            xaxis = np.array(range(1,len(self.df)+1,1))
+            xx=np.array(self.df.x.astype(float))
+            yy=np.array(self.df.y.astype(float))
+            lvlv=np.array(self.df.Lv.astype(float))
+
+            self.ax1.clear()
+            self.ax1.set_xlabel('times')
+            self.ax1.set_xticks(xaxis)
+            self.ax1.set_ylabel('Lv', color='k')
+            self.ax1.plot(xaxis, lvlv, color='k', marker="o")
+            self.ax1.tick_params(axis='y', labelcolor='k')
+            self.ax2.clear()
+            self.ax2.set_ylabel('xy', color='m')  # we already handled the x-label with ax1
+            self.ax2.plot(xaxis, xx, color='r',marker="o")
+            self.ax2.plot(xaxis, yy, color='g',marker="o")
+            self.ax2.tick_params(axis='y', labelcolor='m')
+            self.canvas.draw()
+    def cntcheck(self,stop_obj, args):
+        while True:
+            sleep(0.5)
+            if self.comflag == 1: # 최초 연결되는 작업이있었으면 실행
+                list_serial = sp.comports() #PC에 연결된 COMPORT 긁기
+                #pattern = "USB 직렬"
+                pattern = "Measuring"
+
+                if len(list_serial)<1:  #컴포트읽히는게아예없거나
+                    self.comflag = 0
+                    show_msgbox('연결 끊김 발생! ')
+                for port in list_serial:
+                    if pattern in str(port):
+                        com2 = port.device
+                        if com2 != self.com : # USB직렬이라는 이름의 번호가 com 이랑 달라도 에러날껀데
+                            self.comflag =0
+                            show_msgbox('연결 끊김 발생! ')
+                    else:#usb 직렬이 안보여도 에러나고
+                        self.comflag = 0
+                        show_msgbox('연결 끊김 발생! ')
+    def cntckd(self):
+        self.list_serial = sp.comports()
+        # pattern = "USB 직렬"
+        pattern = "Measuring"
+        for port in self.list_serial:
+            if pattern in str(port):
+                self.com = port.device
+                print(self.com)
+        try:
+            ca410.Connecting(self.com)
+            self.comflag = 1
+            show_msgbox('\n기기 연결 완료\n\n  확인시 0-CAL\n\n ')
+            if 'OK' in ca410.Command('ZRC'):
+                show_msgbox('\n\n0-CAL 완료 ')
+            else:
+                show_msgbox('\n\n응답없음')
+        except serial.SerialException:
+            show_msgbox('이미 통신중 일 수 있습니다.')
+        except AttributeError:
+            show_msgbox('CA410 연결해주세요 ')
+        except UnboundLocalError:
+            show_msgbox('CA410 연결해주세요')
+
+    #제로캘 완료될떄까지 창끄지않게 수정하면좋겠다..
+    def zcalckd(self):
+        try:
+            print(ca410.Command('ZRC'))
+            show_msgbox('\n\n0-CAL 완료 ')
+        except AttributeError:
+            show_msgbox('\n\n연결 확인 해주세요 ')
+        except serial.SerialException:
+            show_msgbox('통신에 오류가 발생했습니다.')
+        except UnboundLocalError:
+            show_msgbox('장치를 연결해주세요')
+    def msrckd(self):
+        #self.comflag=1 ###########################################
+        if self.comflag == 1:
+            if self.rownum < 0: #프로그램실행시 처음에 -1로 초기화를해놓는데  이래야 초기값에 del을 눌렀을때 에러방지를 할수있음
+                self.rownum = -1
+
+            self.flag=1 #플래그를 넣어놔야 어펜드가 아니라 값을클릭해서바꿀때 만 valchange가 이루어진다 안그러면 데이터그냥쌓을때 뻑남 왜그런지 생각하기귀찮음 ㅠ
+            a = [self.rqn_val, self.cid_val, self.ctg_val, self.rdo_val, 'x값','y값','Lv값', self.who_val]
+            #a[4:7] = [0.1,0.8,100]#######################################
+            a[4:7]= ca410.Measure()
+            #ca410.overflag=0#######################
+
+            if ca410.overflag==0:
+                self.df = pd.DataFrame(np.insert(self.df.values,self.rownum+1,a,axis=0),columns=tuple(self.col))
+                self.xytable.setRowCount(len(self.df.index))  # table에 행 수만큼 길이조정하고
+                for i in range(len(self.df.index)):
+                    for j in range(len(self.df.columns)):
+                        self.xytable.setItem(i, j, QTableWidgetItem(str(self.df.iloc[i, j])))  # 값채워넣고
+                self.xytable.setCurrentCell(self.rownum+1,self.colnum)
+                self.flag=0
+                self.pltupdate()#########################
+                self.savinglog()
+        else:
+            show_msgbox('CA410 장치가 없거나 Z-CAL 되지 않았습니다. ')
+    def csvckd(self):
+        show_question()
+    def delckd(self):
+        self.flag=1
+        #아씨 왜  2번째줄 클릭하고 삭제하면 2번째가 아니라 3번째가 날라가지 아씨 지금은안그러는데 rownum -1값과 연관이있는듯
+        if self.rownum > -1:
+            self.df.drop(self.rownum, inplace=True)       # df에서 삭제하려는 행 빼버리고
+            self.df.reset_index(drop=True, inplace=True)  # 인덱스 재반영
+            self.xytable.setRowCount(len(self.df.index))  # table에 행 수만큼 길이조정하고
+            for i in range(len(self.df.index)):
+                for j in range(len(self.df.columns)):
+                    self.xytable.setItem(i, j, QTableWidgetItem(str(self.df.iloc[i, j])))  # 값채워넣고
+            print(self.rownum)
+            self.savinglog()
+        else:
+            show_msgbox("더이상 삭제 할 행이 없습니다.")
+        self.flag = 0
+    def savinglog(self):
+        filename ='/log/' + self.rqn_val +'_' + self.cid_val +'_' + self.rdo_val +'.csv'
+        self.df.to_csv(filename,encoding = 'CP949',index=False)
+    def saving(self):
+        filename ='/' + self.rqn_val +'_' + self.cid_val +'_' + self.rdo_val +'.csv'
+        a = 1
+        while os.path.exists(filename):
+            filename ='/' + self.rqn_val +'_' + self.cid_val +'_' + self.rdo_val +'('+str(a) +')'+'.csv'
+            a+=1
+        self.df.to_csv(filename,encoding = 'CP949',index=False)
+        self.flag == 1
+        self.df = pd.DataFrame(columns=tuple(self.col))
+        self.xytable.setRowCount(len(self.df.index))
+        self.flag == 0
+    def valchanged(self):
+        # 이거 데이터 변경할때만 동작할수있또록 flag 쓰자, 측정할떄 1로 바꾸고 0으로 다시돌려놓잖아
+        # 삭제할때랑 값변경못하게 잠굴때도 고려해야겠다
+        if self.flag == 0:
+            decval= self.xytable.item(self.rownum, self.colnum).text()
+            self.df.iloc[self.rownum,self.colnum]=decval
+    def getposition(self):
+        self.rownum = self.xytable.currentRow()
+        self.colnum = self.xytable.currentColumn()
+        if self.colnum <0: #이 이프문 안넣으면 찍다가 dell로 다 삭제하고 다시 찍을때 1맨위부터데이터쌓임 요상하네~왜 del 모두 수행되면 -1,-1로되는걸까아
+            self.colnum=0
+
+class CA410Control(object):
+    def __init__(self):
+        self.device =''
+
+    def Connecting(self,comport):
+        self.device = serial.Serial(str(comport))
+        print(self.device)
+    def PortClose(self):
+        self.device.close()
+    def Command(self, command):
+        send = command + "\r"
+        self.device.write(send.encode("UTF-8"))
+        return str(self.device.read_until(b"\r"))
+    def ZeroCal(self):
+        self.Command("ZRC")
+    def Measure(self):
+        self.overflag = 0
+        receive = self.Command("MES,2")
+
+        if 'ER' in receive:
+            show_msgbox("측정값에 이상이 있습니다.\n OVER RANGE")
+            receive = [myWindow.rqn_val, myWindow.cid_val, myWindow.ctg_val, myWindow.rdo_val, 0, 0, 0, myWindow.who_val]
+            self.overflag=1
+            return receive
+
+        hi=receive.split(',')
+        xylv=hi[hi.index('P1')+2:hi.index('P1')+5]
+        return xylv
+
+if __name__ == "__main__":
+    app = QApplication(sys.argv)
+    ca410 = CA410Control()
+    myWindow = MyWindow()
+    myWindow.setWindowTitle("CA410 Measuring Program v0 - Innovation of QA")
+
+    myicon = QPixmap()
+    #myicon.load('C:/QCA410/UI/erricon.png')
+    myWindow.setWindowIcon(QIcon(myicon))
+    myWindow.show()
+
+    W0 = WorkerThread.create_worker(0)
+    WorkerThread.start_worker(*W0, myWindow.cntcheck, None,_finished_func=lambda: print("Finished"))
+
+    app.exec_()
+
