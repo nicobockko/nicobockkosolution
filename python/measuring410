@@ -59,11 +59,12 @@ def show_question():
     if result == QMessageBox.Yes:
         print("yes")
         myWindow.saving()
-
-        # myWindow.pltvertical.removeWidget(myWindow)
+        myWindow.pltvertical.removeWidget(myWindow.canvas)
+        myWindow.ax1.remove()
+        myWindow.ax2.remove()
         myWindow.fig, myWindow.ax1 = plt.subplots()
         myWindow.canvas = FigureCanvas(myWindow.fig)
-        #myWindow.pltvertical.addWidget(myWindow.canvas)
+        myWindow.pltvertical.addWidget(myWindow.canvas)
         myWindow.ax1.set_xlabel('times')
         myWindow.ax1.set_ylabel('Lv', color='k')
         myWindow.ax1.tick_params(axis='y', labelcolor='k')
@@ -288,6 +289,19 @@ class MyWindow(QMainWindow, form_class):
                     self.xytable.setItem(i, j, QTableWidgetItem(str(self.df.iloc[i, j])))  # 값채워넣고
             print(self.rownum)
             self.savinglog()
+            myWindow.pltvertical.removeWidget(myWindow.canvas)
+            myWindow.ax1.remove()
+            myWindow.ax2.remove()
+            myWindow.fig, myWindow.ax1 = plt.subplots()
+            myWindow.canvas = FigureCanvas(myWindow.fig)
+            myWindow.pltvertical.addWidget(myWindow.canvas)
+            myWindow.ax1.set_xlabel('times')
+            myWindow.ax1.set_ylabel('Lv', color='k')
+            myWindow.ax1.tick_params(axis='y', labelcolor='k')
+            myWindow.ax2 = myWindow.ax1.twinx()  # instantiate a second axes that shares the same x-axis
+            myWindow.ax2.set_ylabel('xy', color='m')  # we already handled the x-label with ax1
+            myWindow.ax2.tick_params(axis='y', labelcolor='m')
+            self.pltupdate()
         else:
             show_msgbox("더이상 삭제 할 행이 없습니다.")
         self.flag = 0
