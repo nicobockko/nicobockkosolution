@@ -4,16 +4,16 @@ from time import sleep
 import pandas as pd
 import numpy as np
 import serial
-import serial.tools.list_ports as sp
+
 from PyQt5.QtWidgets import *
 from PyQt5.QtWidgets import QMessageBox,QTableWidgetItem,QShortcut
 from PyQt5 import uic
 from PyQt5.QtGui import QPixmap, QIcon,QKeySequence
-
+from PyQt5.QtCore import Qt
 import matplotlib.pyplot as plt
 from matplotlib.backends.backend_qt5agg import FigureCanvasQTAgg as FigureCanvas
 import WorkerThread
-
+import serial.tools.list_ports as sp
 '''
 욕심을 부리면 
 1.값변경에 관해서 컨트롤 젯트가 먹게끔.....
@@ -35,8 +35,7 @@ import WorkerThread
 spec파일에 대해서도 좀알아봐야할거같다 ,,
 '''
 
-form_class = uic.loadUiType("/ca4100.ui")[0]
-
+form_class = uic.loadUiType("C:/QCA410/UI/ca4100.ui")[0]
 def createDirectory(directory):
     try:
         if not os.path.exists(directory):
@@ -46,7 +45,7 @@ def createDirectory(directory):
 
 def show_msgbox(msg):
     myicon = QPixmap()
-    #myicon.load('/erricon.png')
+    myicon.load('C:/QCA410/UI/erricon.png')
     error_dlg = QMessageBox()
     error_dlg.setText(msg)
     error_dlg.setWindowTitle('Surprise~!')
@@ -60,14 +59,28 @@ def show_question():
     if result == QMessageBox.Yes:
         print("yes")
         myWindow.saving()
+
+        # myWindow.pltvertical.removeWidget(myWindow)
+        myWindow.fig, myWindow.ax1 = plt.subplots()
+        myWindow.canvas = FigureCanvas(myWindow.fig)
+        #myWindow.pltvertical.addWidget(myWindow.canvas)
+        myWindow.ax1.set_xlabel('times')
+        myWindow.ax1.set_ylabel('Lv', color='k')
+        myWindow.ax1.tick_params(axis='y', labelcolor='k')
+        myWindow.ax2 = myWindow.ax1.twinx()  # instantiate a second axes that shares the same x-axis
+        myWindow.ax2.set_ylabel('xy', color='m')  # we already handled the x-label with ax1
+        myWindow.ax2.tick_params(axis='y', labelcolor='m')
+
+
+
     else:
         print('pass')
 
 class MyWindow(QMainWindow, form_class):
     def __init__(self):
         super().__init__()
-        logpath = '/log'
-        csvpath = '/madeCSV'
+        logpath = 'C:/QCA410/log'
+        csvpath = 'C:/QCA410/madeCSV'
         createDirectory(logpath)
         createDirectory(csvpath)
         self.setupUi(self)
@@ -82,6 +95,8 @@ class MyWindow(QMainWindow, form_class):
         self.ax2 = self.ax1.twinx()  # instantiate a second axes that shares the same x-axis
         self.ax2.set_ylabel('xy', color='m')  # we already handled the x-label with ax1
         self.ax2.tick_params(axis='y', labelcolor='m')
+        #self.pltvertical.removeWidget(self.canvas)
+
 
         #Qtable 데이터 복사
         copyShortcut = QShortcut(QKeySequence.Copy,self.xytable)
@@ -114,6 +129,7 @@ class MyWindow(QMainWindow, form_class):
         for i in range(self.xytable.columnCount()):
             self.col.append(self.xytable.horizontalHeaderItem(i).text())
         self.df = pd.DataFrame(columns=tuple(self.col))
+
 
     def paste(self):
         #구현 전
@@ -149,17 +165,18 @@ class MyWindow(QMainWindow, form_class):
     def pltupdate(self):
         if len(self.df) >0:
             xaxis = np.array(range(1,len(self.df)+1,1))
+
             xx=np.array(self.df.x.astype(float))
             yy=np.array(self.df.y.astype(float))
             lvlv=np.array(self.df.Lv.astype(float))
+            #self.ax1.clear()
 
-            self.ax1.clear()
             self.ax1.set_xlabel('times')
             self.ax1.set_xticks(xaxis)
             self.ax1.set_ylabel('Lv', color='k')
             self.ax1.plot(xaxis, lvlv, color='k', marker="o")
             self.ax1.tick_params(axis='y', labelcolor='k')
-            self.ax2.clear()
+            #self.ax2.clear()
             self.ax2.set_ylabel('xy', color='m')  # we already handled the x-label with ax1
             self.ax2.plot(xaxis, xx, color='r',marker="o")
             self.ax2.plot(xaxis, yy, color='g',marker="o")
@@ -167,34 +184,47 @@ class MyWindow(QMainWindow, form_class):
             self.canvas.draw()
     def cntcheck(self,stop_obj, args):
         while True:
-            sleep(0.5)
+            sleep(1)
+            print('gogo')
+            isthere = 0
             if self.comflag == 1: # 최초 연결되는 작업이있었으면 실행
                 list_serial = sp.comports() #PC에 연결된 COMPORT 긁기
-                #pattern = "USB 직렬"
+                #pattern = "CH340"
+                #pattern = "직렬"
                 pattern = "Measuring"
-
-                if len(list_serial)<1:  #컴포트읽히는게아예없거나
+                if len(list_serial)<1:  #컴포트읽히는게아예없으면 에러
                     self.comflag = 0
-                    show_msgbox('연결 끊김 발생! ')
-                for port in list_serial:
-                    if pattern in str(port):
-                        com2 = port.device
-                        if com2 != self.com : # USB직렬이라는 이름의 번호가 com 이랑 달라도 에러날껀데
-                            self.comflag =0
-                            show_msgbox('연결 끊김 발생! ')
-                    else:#usb 직렬이 안보여도 에러나고
+                    show_msgbox('연결 끊김 발생!')
+                    # return
+                else:                #아예없는건아니라면 있는거 조사해서 com번호가 기존연결됐던 번호랑 같은지 조사
+                    for port in list_serial:
+                        if pattern in str(port): #근데뭐이런경우는거의없긴할거같은데 연결된장치중에 ca410이 있으면,
+                            isthere=1  #
+                            com2 = port.device
+                            if com2 != self.com : # 컴포트숫자조사해서 기존 연결된 숫자랑 다르면 에러
+                                self.comflag =0
+                                show_msgbox('연결 끊김 발생!!~!!')
+                                # return
+                    if isthere == 0: # 컴포트 읽힌거중에 ca410이 여전히 있으면 동작안하고 없으면 동작하는거야
+                        # isthere = 1
                         self.comflag = 0
-                        show_msgbox('연결 끊김 발생! ')
+                        show_msgbox('연결 끊김 발생!~~! ')
+
+                        # return
+
     def cntckd(self):
         self.list_serial = sp.comports()
-        # pattern = "USB 직렬"
+        #pattern = "CH340"
+        #pattern = "직렬"
         pattern = "Measuring"
+
         for port in self.list_serial:
             if pattern in str(port):
                 self.com = port.device
-                print(self.com)
+
         try:
             ca410.Connecting(self.com)
+
             self.comflag = 1
             show_msgbox('\n기기 연결 완료\n\n  확인시 0-CAL\n\n ')
             if 'OK' in ca410.Command('ZRC'):
@@ -202,9 +232,9 @@ class MyWindow(QMainWindow, form_class):
             else:
                 show_msgbox('\n\n응답없음')
         except serial.SerialException:
-            show_msgbox('이미 통신중 일 수 있습니다.')
+            show_msgbox('이미 통신중 이거나 \n 재연결이라면 연결상태 확인하세요  ')
         except AttributeError:
-            show_msgbox('CA410 연결해주세요 ')
+            show_msgbox('CA410 연결해주세요! ')
         except UnboundLocalError:
             show_msgbox('CA410 연결해주세요')
 
@@ -234,6 +264,7 @@ class MyWindow(QMainWindow, form_class):
             if ca410.overflag==0:
                 self.df = pd.DataFrame(np.insert(self.df.values,self.rownum+1,a,axis=0),columns=tuple(self.col))
                 self.xytable.setRowCount(len(self.df.index))  # table에 행 수만큼 길이조정하고
+
                 for i in range(len(self.df.index)):
                     for j in range(len(self.df.columns)):
                         self.xytable.setItem(i, j, QTableWidgetItem(str(self.df.iloc[i, j])))  # 값채워넣고
@@ -261,13 +292,13 @@ class MyWindow(QMainWindow, form_class):
             show_msgbox("더이상 삭제 할 행이 없습니다.")
         self.flag = 0
     def savinglog(self):
-        filename ='/log/' + self.rqn_val +'_' + self.cid_val +'_' + self.rdo_val +'.csv'
+        filename ='C:/QCA410/log/' + self.rqn_val +'_' + self.cid_val +'_' + self.rdo_val +'.csv'
         self.df.to_csv(filename,encoding = 'CP949',index=False)
     def saving(self):
-        filename ='/' + self.rqn_val +'_' + self.cid_val +'_' + self.rdo_val +'.csv'
+        filename ='C:/QCA410/madeCSV/' + self.rqn_val +'_' + self.cid_val +'_' + self.rdo_val +'.csv'
         a = 1
         while os.path.exists(filename):
-            filename ='/' + self.rqn_val +'_' + self.cid_val +'_' + self.rdo_val +'('+str(a) +')'+'.csv'
+            filename ='C:/QCA410/madeCSV/' + self.rqn_val +'_' + self.cid_val +'_' + self.rdo_val +'('+str(a) +')'+'.csv'
             a+=1
         self.df.to_csv(filename,encoding = 'CP949',index=False)
         self.flag == 1
@@ -319,15 +350,17 @@ if __name__ == "__main__":
     app = QApplication(sys.argv)
     ca410 = CA410Control()
     myWindow = MyWindow()
-    myWindow.setWindowTitle("CA410 Measuring Program v0 - ")
+    myWindow.setWindowTitle("CA410 Measuring Program v0 - Innovation of QA")
 
     myicon = QPixmap()
-    #myicon.load('C:/QCA410/UI/erricon.png')
+    myicon.load('C:/QCA410/UI/erricon.png')
     myWindow.setWindowIcon(QIcon(myicon))
     myWindow.show()
 
     W0 = WorkerThread.create_worker(0)
     WorkerThread.start_worker(*W0, myWindow.cntcheck, None,_finished_func=lambda: print("Finished"))
+    # myWindow.pltvertical.removeWidget()
+    # myWindow.pltvertical.addWidget(myWindow.canvas)
 
     app.exec_()
 
