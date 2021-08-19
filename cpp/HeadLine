@@ -1,0 +1,26 @@
+/*
+#include <iostream>
+
+using namespace std;
+
+int main()
+{
+	char HeadLine[80];
+
+	cout << "기사헤드라인 입력하세염 " << endl;
+
+	cin.getline(HeadLine, sizeof(HeadLine));
+
+	for(int i =0; i<sizeof(HeadLine); i++ )
+	{
+		HeadLine[i] = toupper(HeadLine[i]);
+
+	}
+
+	cout << HeadLine;
+
+}
+*/
+
+#include <stdio.h>
+int main() { fputs("THE_HEADLINE_IS_THE_TEXT_INDICATING_THE_NATURE_OF_THE_ARTICLE_BELOW_IT.", stdout); }
