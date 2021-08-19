@@ -1,0 +1,14 @@
+#include <iostream>
+
+int main()
+{
+
+	std::cout << "구매금액을 입력하세요 헤헤" << std::endl;
+	int caltot, calpoint;
+	std::cin >> caltot;
+	calpoint = caltot * 0.01;
+
+	std::cout << "발생 포인트는 =" << calpoint << "점입니다 호호\ㅜ";
+
+	
+}
