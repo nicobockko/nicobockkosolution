@@ -1,13 +1,15 @@
 #include <iostream>
-
+using namespace std;
 int main()
 {
-
-	std::cout << "구매금액을 입력하세요 헤헤" << std::endl;
+	char irum[30];
+	cout << "이름 번화번호 불르세여 " << endl;
+	cin.getline(irum, sizeof(irum));
+	cout << "구매금액입력하세요" << endl;
 	int caltot, calpoint;
-	std::cin >> caltot;
+	cin >> caltot;
 	calpoint = caltot * 0.01;
-
+	cout << irum << "님 ";
 	std::cout << "발생 포인트는 =" << calpoint << "점입니다 호호\ㅜ";
 
 	
