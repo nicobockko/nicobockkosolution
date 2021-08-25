@@ -1,0 +1,51 @@
+import numpy as np
+import cv2
+from PIL import Image
+import math
+
+val_back = 25
+val_ract = (35, 35, 35)
+
+x = 
+y = 
+xratio = 16
+yratio = 9                        #########
+inch = 65            #########
+boxsize = 40 (미리)네모사이즈
+
+
+xsize = xratio * inch*25.4/math.sqrt(xratio*xratio + yratio*yratio)
+ysize = yratio * inch*25.4/math.sqrt(xratio*xratio + yratio*yratio)
+xpixelsize = xsize/x
+ypixelsize = ysize/y
+xpixellength = boxsize/xpixelsize
+ypixellength = boxsize/ypixelsize
+
+
+divider=10
+len_x_draw=5
+len_y_draw=5
+xfirst = x/divider
+yfirst = y/divider
+xlast = (divider-1)*x/divider
+ylast = (divider-1)*y/divider
+
+xinterval=(xlast-xfirst)/(len_x_draw-1)
+yinterval=(ylast-yfirst)/(len_y_draw-1)
+
+a = np.full((y, x, 3), val_back)  
+
+# cv2.rectangle(a,(np.min(twox), np.min(twoy)), (np.max(twox), np.max(twoy)), lactang, 2)
+
+for i in range(len_y_draw):
+    ypoint = int(yfirst + i * yinterval)
+    for j in range(len_x_draw):
+        xpoint = int(xfirst + j * xinterval)
+        cv2.rectangle(a, (xpoint-int(xpixellength/2), ypoint-int(ypixellength/2)), (xpoint+int(xpixellength/2), ypoint+int(ypixellength/2)), val_ract, 2)
+
+
+a = a.astype(np.uint8)
+hi = Image.fromarray(a)
+hi.show()
+
+#hi.save('.bmp', 'BMP')
