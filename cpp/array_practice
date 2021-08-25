@@ -1,0 +1,32 @@
+
+#include <iostream>
+
+using namespace std;
+
+
+int main()
+{
+	int getlen = 0;
+	char arry[1000];
+
+	cin >> arry;
+
+	for (int i = 0; i < sizeof(arry); i++)
+	{
+		if (arry[i] == NULL)
+		{
+			cout << "null" << endl;
+			getlen = i;
+			//i = sizeof(arry);
+		}
+	}
+
+
+	for (int i = 0; i < getlen; i++)
+	{
+		cout << arry[i];
+	}
+		cout << "good";
+
+	return 0;
+}
