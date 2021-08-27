@@ -1,0 +1,83 @@
+from pyqtgraph.Qt import QtGui, QtCore
+import numpy as np
+import pyqtgraph as pg
+
+
+# pg.setConfigOptions(antialias=True)
+pg.setConfigOption('background', '#ffffff') #화이트
+pg.setConfigOption('foreground', '#000000')
+from pyqtgraph.ptime import time
+
+app = QtGui.QApplication([])
+
+p = pg.plot()
+p.setXRange(0,10)
+p.setYRange(-10,10)
+p.setWindowTitle("title")
+p.setLabel('bottom', '측정 횟수', units='회', **{'font-size':'15pt'}) # 축이름  (숫자색은어떻게하지
+p.getAxis('bottom').setPen(pg.mkPen(color='#000000', width=3)) # 하단 x축 선 색두께랑 색깔  (숫자색은어떻게하지
+p.setLabel('left', 'Lv', units='cd/m²', **{'font-size':'15pt'})# 왼쪽 축이름, 단위 여기서 컬러는뭐지 (숫자색은어떻게하지
+p.getAxis('left').setPen(pg.mkPen(color='#000000', width=3))# 왼쪽 축색, 레이블색...
+
+curve = p.plot(x=[], y=[], pen=pg.mkPen(color='#0000ff'))   #빈플롯 하나 만들어놓기
+
+p.showAxis('right') # 오른쪽축도 추가로 표시 시켜
+p.setLabel('right', 'xy', **{'font-size':'15pt'})
+p.getAxis('right').setPen(pg.mkPen(color='#ff00ff', width=3))
+
+
+p2 = pg.ViewBox() #아마 그래프를 찍을공간을 추가로 만들어야하나보다,;  축 별도관리를위해서일수도있을듯
+p.scene().addItem(p2) # 원래 그래프에 객채를 주가시키고
+p.getAxis('right').linkToView(p2) # 오른쪽축을 링크를시키는데...이짓을 해야되나?
+p2.setXLink(p) # x축은 공유하기로하는건가 ?
+p2.setYRange(-10,10) #초기 축
+curve2 = pg.PlotCurveItem(pen=pg.mkPen(color='#025b94', width=1)) # ..흠,,
+p2.addItem(curve2)
+
+def updateViews():
+    global p2
+    p2.setGeometry(p.getViewBox().sceneBoundingRect())
+    p2.linkedViewChanged(p.getViewBox(), p2.XAxis)
+p.getViewBox().sigResized.connect(updateViews)
+
+x = np.arange(0, 10.0,0.1)
+data = 5+np.sin(30*x)
+data2 = -5+np.cos(30*x)
+ptr = 0
+lastTime = time()
+fps = None
+
+def update():
+    global p, x, curve, data, curve2, data2, ptr, lastTime, fps
+    if ptr < len(x):
+        a=x[:ptr]
+        b=data[:ptr]
+        c=data2[:ptr]
+        curve.setData(x=a, y=b , symbol ='o', symbolSize = 5)
+        curve2.setData(x=a, y=c)
+        ptr += 1
+        p.setXRange(0,  max(a) if len(a)>1 else 0)
+        p.setYRange(min(b) if len(b)>1 else 0, max(b) if len(b)>1 else 0)
+        p2.setYRange(min(c) if len(c)>1 else 0, max(c) if len(c)>1 else 0)
+        now = time()
+        dt = now - lastTime
+        lastTime = now
+        if fps is None:
+            fps = 1.0/dt
+        else:
+            s = np.clip(dt*3., 0, 1)
+            fps = fps * (1-s) + (1.0/dt) * s
+        p.setTitle('%0.2f fps' % fps)
+    else:
+        ptr = 0
+    app.processEvents()  ## force complete redraw for every plot.  Try commenting out to see if a different in speed occurs.
+timer = QtCore.QTimer()
+timer.timeout.connect(update)
+timer.start(90)
+p.setXRange(0,20)
+
+
+if __name__ == '__main__':
+    import sys
+    if (sys.flags.interactive != 1) or not hasattr(QtCore, 'PYQT_VERSION'):
+        QtGui.QApplication.instance().exec_()
