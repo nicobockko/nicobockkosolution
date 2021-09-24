@@ -1062,4 +1062,84 @@ int main(void)
 
 
 
-/**/
+/* 39큰수 더하기 곱하기 ㅣㅋㅋㅋㅋ
+
+#define min(A,B) (((A)<(B))? (A) : (B))
+#define max(A,B) (((A)>(B))? (A) : (B))
+#include <iostream>
+using namespace std;
+
+int main(void)
+{
+	double a;
+	cin >> a;
+
+	int aa = 0;
+	double aaa = a;
+
+	while (a / 10 > 0.9)
+	{
+		a /= 10;
+		aa++;
+	}
+
+	char c;
+	cin >> c;
+
+
+
+
+	double b;
+	cin >> b;
+
+	int bb = 0;
+	double bbb = b;
+
+	while (b / 10 > 0.9)
+	{
+		b /= 10;
+		bb++;
+	}
+
+
+
+
+	if (c == '+')
+	{   if (aaa == bbb)
+	    {			
+	        cout << '2';
+			for (int i = 0; i < max(aa, bb)- 1; i++) cout << '0';
+	    
+	    }
+	
+		else if (aaa + bbb > 100000)
+		{
+			cout << '1';
+			for (int i = 0; i < max(aa, bb) - min(aa, bb) - 1; i++) cout << '0';
+			cout << '1';
+			for (int i = 0; i < min(aa, bb); i++) cout << '0';
+		}
+		
+		else cout << aaa + bbb;
+	}
+
+
+
+	if (c == '*')
+	{
+
+		if (aaa * bbb > 100000)
+		{
+			cout << '1';
+			for (int i = 0; i < aa + bb; i++) cout << '0';
+		}
+		else cout << aaa *bbb;
+	}
+
+
+	return 0;
+}
+
+
+
+*/
