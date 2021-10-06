@@ -1,0 +1,179 @@
+import numpy as np
+import cv2
+from PIL import Image
+from matplotlib import pyplot as plt
+
+
+im = Image.open('.mim')
+ratio = 7
+
+
+
+
+imarray = np.array(im)
+# image normalization 일단 보여주기위한 다운스케일링
+imarray_view = (imarray / 4095) * 255
+imarray_view = imarray_view.astype(np.uint8)
+imarray_view = cv2.resize(imarray_view, (imarray_view.shape[1]//ratio, imarray_view.shape[0]//ratio), interpolation=cv2.INTER_LINEAR)
+# smoothing x2  원소스 5x5필터 적용 가우시안필터
+imarray = cv2.GaussianBlur(imarray, (5, 5), 0.0)
+imarray = cv2.GaussianBlur(imarray, (5, 5), 0.0)
+
+# background removal 원소스 데이터에서 이미지 자르기
+ids0 = np.where(imarray < 780) #255기준 30수준
+imarray[ids0] = 0
+ids1 = np.where(imarray != 0)
+new_x_min = np.min(ids1[1])
+new_x_max = np.max(ids1[1])
+new_y_min = np.min(ids1[0])
+new_y_max = np.max(ids1[0])
+offset = 60 # 원본기준 60개 오프셋주고 잘라내기
+imarray_cut = imarray[new_y_min+offset:new_y_max-offset, new_x_min+offset:new_x_max-offset]
+print(imarray_view.shape[1], imarray_view.shape[0])
+print(imarray_cut.shape[1], imarray_cut.shape[0])
+
+#잘린이미지 에서 다시 보여주기위한 짓꺼리
+blur_mini = (imarray_cut/ 4095) * 255
+blur_mini = blur_mini.astype(np.uint8)
+blur_mini = cv2.resize(blur_mini, (blur_mini.shape[1]//ratio, blur_mini.shape[0]//ratio), interpolation=cv2.INTER_LINEAR) #(가로,세로)
+print(blur_mini.shape[1], blur_mini.shape[0])
+
+isDragging = False
+x0, y0, w, h = -1, -1, -1, -1
+blue, red = (127, 0, 0), (127,0,0)
+
+
+def onMouse(event, x, y, flags, param):
+    global isDragging, x0, y0, img
+    if event == cv2.EVENT_LBUTTONDOWN:
+        isDragging = True
+        x0 = x
+        y0 = y
+    elif event == cv2.EVENT_MOUSEMOVE:
+        if isDragging:
+            x = 0 if x < 0 else x
+            x = len(blur_mini[0])-1 if x > len(blur_mini[0]) else x
+
+            y = 0 if y < 0 else y
+            y = len(blur_mini)-1if y > len(blur_mini) else y
+
+            img_draw = blur_mini.copy()
+            twox = [x0,x]
+            twoy = [y0,y]
+
+            cv2.rectangle(img_draw, (np.min(twox), np.min(twoy)), (np.max(twox), np.max(twoy)), blue, 1)
+            cv2.line(img_draw, (np.min(twox), int(np.average(twoy))), (np.max(twox), int(np.average(twoy))), 63,
+                     1)  # 가로줄 긋기
+            cv2.line(img_draw, (int(np.average(twox)), np.min(twoy)), (int(np.average(twox)), np.max(twoy)), 63,
+                     1)  # 세로줄을긋기
+            cv2.imshow('img', img_draw)
+            print(x,y)
+
+
+    elif event == cv2.EVENT_LBUTTONUP:
+        if isDragging:
+            isDragging = False
+
+            x = 0 if x < 0 else x
+            x = len(blur_mini[0])-1 if x > len(blur_mini[0]) else x
+
+            y = 0 if y < 0 else y
+            y = len(blur_mini)-1if y > len(blur_mini) else y
+
+            w = abs(x - x0)
+            h = abs(y - y0)
+            twox = [x0,x]
+            twoy = [y0,y]
+            mintwox = np.min(twox)
+            maxtwox = np.max(twox)
+            mintwoy = np.min(twoy)
+            maxtwoy = np.max(twoy)
+            print(x, y)
+
+            if w > 0 and h > 0:
+                img_draw = blur_mini.copy()
+                cv2.rectangle(img_draw,(np.min(twox), np.min(twoy)), (np.max(twox), np.max(twoy)), red, 2)
+                cv2.line(img_draw, (np.min(twox), int(np.average(twoy))), (np.max(twox), int(np.average(twoy))), 63,
+                         1)  # 가로줄 긋기
+                cv2.line(img_draw, (int(np.average(twox)), np.min(twoy)), (int(np.average(twox)), np.max(twoy)), 63,
+                         1)  # 세로줄을긋기
+
+                roi = blur_mini[np.min(twoy):np.min(twoy) + h, np.min(twox): np.min(twox) + w]
+                cv2.imshow('cropped', roi)
+
+                plt.subplot(121)
+                x_values = range(np.min(twox)*ratio, (np.min(twox)+w)*ratio)  # x축 지점의 값들
+                y_values = imarray_cut[(np.min(twoy) + np.min(twoy)+h)*ratio //2][np.min(twox)*ratio:(np.min(twox)+w)*ratio]  # 원본이미지 x축데이터
+                #print("가로선")
+                #print(y_values)
+                plt.plot(x_values, y_values)  # line 그래프를 그립니다
+
+
+                #주변값 취득 및 드로잉
+                lens=15
+                exps=15
+                mintwoy = exps if mintwoy - exps < 0 else mintwoy
+                #mintwox = lens if mintwox - lens < 0 else mintwox
+                #mintwoy = lens if mintwoy - lens < 0 else mintwoy
+                mintwox = exps if mintwox - exps < 0 else mintwox
+
+                maxtwoy = maxtwoy - exps if maxtwoy + exps > len(blur_mini) else maxtwoy
+                #maxtwox = 0 if maxtwox + lens > 0 else mintwox
+                #maxtwoy = 0 if maxtwoy + lens > 0 else mintwoy
+                maxtwox = maxtwox - exps if maxtwox + exps > len(blur_mini[0]) else maxtwox
+
+                print(maxtwox,maxtwoy)
+
+
+
+                right= imarray_cut[(mintwoy-exps)*ratio:(maxtwoy+exps)*ratio,maxtwox*ratio:(maxtwox+lens)*ratio]
+                left= imarray_cut[(mintwoy-exps)*ratio:(maxtwoy+exps)*ratio,(mintwox-lens)*ratio:mintwox*ratio]
+                top=imarray_cut[(mintwoy-lens)*ratio:(mintwoy*ratio),(mintwox-exps)*ratio:(maxtwox+exps)*ratio]
+                bottom=imarray_cut[maxtwoy*ratio:(maxtwoy+lens)*ratio, (mintwox-exps)*ratio:(maxtwox+exps)*ratio]
+                # 최소값이 0보다 작거나 최대값이 크면 그작업 또 해줘야댐
+                rightaver = np.average(right) # 우측
+                leftaver  = np.average(left)  # 좌측
+                xaver=(rightaver+leftaver)//2
+
+                cv2.rectangle(img_draw, (maxtwox,(mintwoy-exps)),((maxtwox+lens),(maxtwoy+exps)), red, 1)#우측
+                cv2.rectangle(img_draw, (mintwox-lens,(mintwoy-exps)),(mintwox,(maxtwoy+exps)), red, 1)#좌측
+
+                plt.subplot(122)
+                x_values = range(np.min(twoy)*ratio, (np.min(twoy)+h)*ratio)  # x축 지점의 값들
+                y_values =imarray_cut[np.min(twoy)*ratio:(np.min(twoy)+h)*ratio,(np.min(twox)+np.min(twox)+w)//2*ratio] # 원본이미지 y축 데이터
+                plt.gca().invert_yaxis()
+                plt.plot(y_values, x_values)  # line 그래프를 그립니다
+
+
+                bottomaver = np.average(bottom) # 아래
+                topaver =np.average(top)  #위
+                yaver=(topaver + bottomaver) // 2
+                cv2.rectangle(img_draw, (mintwox-exps,mintwoy-lens),(maxtwox+exps,mintwoy), red, 1)#위
+                cv2.rectangle(img_draw, (mintwox-exps,maxtwoy),(maxtwox+exps,maxtwoy+lens), red, 1)#아래
+                print(f"rigntaver: {rightaver} leftaver: {leftaver} topaver: {topaver} bottomaver: {bottomaver}")
+                print(f"rigntaver: {np.size(right)} leftaver: {np.size(left)} topaver:{np.size(top)} bottomaver: {np.size(bottom)}")
+
+                cv2.imshow('img', img_draw)
+                #mat plot lib 마우스 이벤트
+
+
+
+                plt.show()  # 그래프를 화면에 보여줍니다
+
+            else:
+                cv2.imshow('img', blur_mini)
+                print('drag should start from left-top side')
+
+
+
+
+
+
+
+cv2.imshow('original', imarray_view)
+cv2.imshow('img', blur_mini)
+cv2.setMouseCallback('img', onMouse)
+cv2.waitKey()
+cv2.destroyAllWindows()
+
+#https://hyongdoc.tistory.com/355
