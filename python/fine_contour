@@ -1,0 +1,105 @@
+#잔상패턴 가져와서 잔상박스 찾기
+import cv2
+import numpy as np
+from PIL import Image
+coloredImg = cv2.imread('D://Non')
+
+img_gray = cv2.cvtColor(coloredImg, cv2.COLOR_RGB2GRAY)
+ret, thresh = cv2.threshold(img_gray, 1, 255,0)
+contours, hierarchy = cv2.findContours(thresh, cv2.RETR_LIST, cv2.CHAIN_APPROX_SIMPLE)
+img_gray_mura_con = cv2.drawContours(coloredImg, contours, -1, (255,0,255), 5)
+
+#이미지 크니깐 디스플레이하기위해서 줄이기
+ratio=3
+imarray_view = cv2.resize(img_gray_mura_con, (img_gray_mura_con.shape[1]//ratio, img_gray_mura_con.shape[0]//ratio), interpolation=cv2.INTER_LINEAR)
+
+
+#촬상이미지 가져오기
+import tifffile as tiff
+tif = tiff.imread('D://E0B (.mim')
+imarray2 = np.array(tif)
+
+#촬상이미지 짜르기 책임님짜신 컨투어로 대체 하시면 더좋을듯여!
+imarray = imarray2[:,:,0]
+ids0 = np.where(imarray < 1000) #255기준 30그레이
+imarray[ids0] = 0
+ids1 = np.where(imarray != 0)
+print(ids1)
+new_x_min = np.min(ids1[1])
+new_x_max = np.max(ids1[1])
+new_y_min = np.min(ids1[0])
+new_y_max = np.max(ids1[0])
+offset = 70
+
+imarray_cut = imarray2[new_y_min+offset:new_y_max-offset, new_x_min+offset:new_x_max-offset]
+imarray = (imarray_cut/ 4095) * 255
+imarray = imarray.astype(np.uint8)
+
+#촬상이미지랑 잔상패턴이랑 오버랩 하기위해서  촬상이미지 해상도 UD로맞추기
+imarray_resize = cv2.resize(imarray, (3840,2160), interpolation=cv2.INTER_LINEAR)
+imarray_resize2=np.copy(imarray_resize)
+
+contour_ = cv2.drawContours(imarray_resize, contours, -1, (127,0,127), 5)
+
+
+# 잔상박스사이즈 파악하기
+size_boxx =contours[0][2][0][0] - contours[0][0][0][0]
+size_boxy =contours[0][1][0][1] - contours[0][0][0][1]
+
+# 중심점얻기
+cenx = contours[-1][0][0][0] + size_boxx//2
+ceny = contours[-1][0][0][1] + size_boxy//2
+
+#1번박스 2번박스 거리 재기
+contoursorder=np.flip(contours)
+cenx1 = contoursorder[0][0][0][1] + size_boxx//2
+cenx2 = contoursorder[1][0][0][1] + size_boxx//2
+length=(cenx2-cenx1)//2
+
+#BGR 값 읽어오는 함수 선언하기
+def getaver(data):
+    bgr = []
+
+    b = np.average(data[:, :, 0])
+    g = np.average(data[:, :, 1])
+    r = np.average(data[:, :, 2])
+
+    bgr.append(int(b))
+    bgr.append(int(g))
+    bgr.append(int(r))
+    return bgr
+
+
+font = cv2.FONT_HERSHEY_SIMPLEX
+#네모 박스 중심점마다 10X10 평균읽기
+for i in contours:
+    width = 5
+    cenx = i[:][0][0][0] + size_boxx // 2
+    ceny = i[:][0][0][1] + size_boxy // 2
+
+    cenx_p = cenx + length
+    cenx_m = cenx - length
+    ceny_p = ceny + length
+    ceny_m = ceny - length
+
+    cen_aver = coloredImg[ceny - width:ceny + width, cenx - width: cenx + width]
+    right_aver = imarray_resize2[ceny - width:ceny + width, cenx_p - width: cenx_p + width]
+    left_aver = imarray_resize2[ceny - width:ceny + width, cenx_m - width: cenx_m + width]
+    top_aver = imarray_resize2[ceny_p - width:ceny_p + width, cenx - width: cenx + width]
+    bottom_aver = imarray_resize2[ceny_m - width:ceny_m + width, cenx_p - width: cenx_p + width]
+
+    cv2.rectangle(contour_, (cenx - width, ceny - width), (cenx + width, ceny + width), (0, 255, 0), 6)
+    getaver(cen_aver)
+    cv2.putText(coloredImg, str(np.max(getaver(cen_aver))), (cenx, ceny), font, 1, (63, 127, 255), 4)  # BGR 순임
+
+    cv2.rectangle(contour_, (cenx_p - width, ceny - width), (cenx_p + width, ceny + width), (255, 0, 0), 6)
+    # getaver(right_aver)
+    cv2.rectangle(contour_, (cenx_m - width, ceny - width), (cenx_m + width, ceny + width), (255, 0, 0), 6)
+    # getaver(left_aver)
+    cv2.rectangle(contour_, (cenx - width, ceny_p - width), (cenx + width, ceny_p + width), (255, 0, 0), 6)
+    # getaver(top_aver)
+    cv2.rectangle(contour_, (cenx - width, ceny_m - width), (cenx + width, ceny_m + width), (255, 0, 0), 6)
+    # getaver(bottom_aver)
+
+cv2.imshow('original', contour_)
+cv2.waitKey(0)
