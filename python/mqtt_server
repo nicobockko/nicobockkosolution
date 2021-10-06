@@ -1,0 +1,128 @@
+import sys
+from PyQt5 import QtWidgets
+from PyQt5.QtGui import QTextCursor
+import paho.mqtt.client as mqtt
+import csv
+import WorkerThread
+import datetime
+
+TXT_WIDGET = None
+
+def on_connect(client, userdata, flags, rc):
+    if rc == 0:
+        print("connected OK")
+    else:
+        print("Bad connection Returned code=", rc)
+
+def on_disconnect(client, userdata, flags, rc=0):
+    print(str(rc))
+
+def on_publish(client, userdata, mid):
+    print("In on_pub callback mid= ", mid)
+
+
+def on_subscribe(client, userdata, mid, granted_qos):
+    print("subscribed: " + str(mid) + " " + str(granted_qos))
+
+
+def on_message(client, userdata, msg):
+    #str_msg = str(msg.payload)
+    print("payload!!!")
+    str_msg = str(msg.payload.decode("utf-8"))
+
+    if str_msg =="hello world":
+        TXT_WIDGET.append("connected complete")  # 창에 글자찍어
+        TXT_WIDGET.setTextCursor(cursor)
+    print(str_msg)
+    #TXT_WIDGET.append(str_msg) #창에 글자찍어
+    #TXT_WIDGET.setTextCursor(cursor)
+    arr = str_msg.split(';')
+
+    arr = arr[1:]
+
+    if len(arr)==0:
+        arr.append(" ")
+    if len(arr)%2 != 0:
+        arr.append(" ")
+    if len(arr) % 2 != 0:
+        arr.append(" ")
+
+    dt = datetime.datetime.now() #시간 정보 습득
+    filename = 'C:/test/ohm' + dt.strftime("%Y_%m_%d") #파일 경로와 명 정의
+    csvfile = open(filename + '.csv', 'a', newline='') # 파일만들어버려
+    writer = csv.writer(csvfile)  # 작성자 선언하고
+
+    header = dt.strftime("%H_%M_%S")
+    #writer.writerow([header])
+    arrr=arr.copy()
+
+    while len(arr) > 0:
+        arr2 = []
+        for i in range(4):
+            try:
+                arr2.append(arr.pop(0))
+            except IndexError:
+                continue
+        arr2.append(header)
+        TXT_WIDGET.append(str(arr2))  # 창에 글자찍어
+        TXT_WIDGET.setTextCursor(cursor)
+
+    while len(arrr) > 0:
+        arr3 = []
+        for i in range(2):
+            try:
+                arr3.append(arrr.pop(0))
+            except IndexError:
+                continue
+        arr3.append(header)
+        writer.writerow(arr3)
+
+    print("OK")
+    csvfile.close()
+
+
+
+
+def mqtt_loop(stop_obj, args):
+    client = mqtt.Client()
+    client.on_connect = on_connect
+    client.on_disconnect = on_disconnect
+    client.on_publish = on_publish
+    client.on_subscribe = on_subscribe
+    client.on_message = on_message
+    client.username_pw_set('test_scott', '1234')
+    client.connect('11...216', 1883)
+    #client.connect('12...50', 1883)
+    client.subscribe('testtopic/9919', 2)
+    client.loop_forever()
+
+
+if __name__ == "__main__":
+    app = QtWidgets.QApplication(sys.argv)
+    #MainWindow.setWindowTitle(_translate("MainWindow", "휘도데이터취합기 By Nicobockko Solution"))
+    main_app = QtWidgets.QMainWindow()
+    layout1 = QtWidgets.QHBoxLayout()
+    main_widget = QtWidgets.QWidget()
+    main_widget.setLayout(layout1)
+    main_app.setCentralWidget(main_widget)
+    main_app.setWindowTitle("OLB ohm meter WiFi by junsik-V02")
+
+    lbl1 = QtWidgets.QLabel('Ohm Data Set : ')
+    txt1 = QtWidgets.QTextEdit()
+    cursor = txt1.textCursor()
+    cursor.movePosition(QTextCursor.End)
+
+    txt1.setReadOnly(True)
+    layout1.addWidget(lbl1)
+    layout1.addWidget(txt1)
+
+    main_app.show()
+
+    TXT_WIDGET = txt1
+
+    # WorkerThread
+    W0 = WorkerThread.create_worker(0)
+    WorkerThread.start_worker(*W0, mqtt_loop, None,
+                              _finished_func=lambda: print("Finished"))
+
+    app.exec_()
