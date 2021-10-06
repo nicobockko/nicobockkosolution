@@ -1,0 +1,11 @@
+from PIL import Image
+filename = r'D:/Non_Documents/QCAICON.png'
+img = Image.open(filename)
+img.save('logo.ico')
+
+# ====================
+
+# Optionally, you may specify the icon sizes you want:
+
+icon_sizes = [(256,256)]
+img.save('logo.ico', sizes=icon_sizes)
