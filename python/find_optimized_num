@@ -1,0 +1,18 @@
+
+import numpy as np
+
+x = np.random.rand(10) * 50
+print(x)
+min_val = 999999999.0
+
+i, j, k = -1, -1, -1
+
+for _i in range(len(x)):
+    for _j in range(len(x)):
+        for _k in range(len(x):
+            s = _i + _j + _k
+            if min_val > np.fabs(100 -  s):
+                min_val = np.fabs(100 -  s)
+                i, j, k = _i, _j, _k
+                print("i: %f, j: %f, k: %f, sum: %f" % (i, j, k, s))
+
