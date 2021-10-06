@@ -1,0 +1,189 @@
+import os
+import sys
+import pandas as pd
+from PyQt5.QtWidgets import *
+from PyQt5.QtWidgets import QMessageBox,QTableWidgetItem,QShortcut
+from PyQt5 import uic
+from PyQt5.QtGui import QPixmap, QIcon,QKeySequence
+from PyQt5.QtCore import Qt
+
+
+
+form_class = uic.loadUiType("C:/QCA410/UI/olbdata.ui")[0]
+
+
+def createDirectory(directory):
+    try:
+        if not os.path.exists(directory):
+            os.makedirs(directory)
+    except OSError:
+       show_msgbox('디랙토리 생성 실패')
+
+def show_msgbox(msg):
+    myicon = QPixmap()
+    myicon.load('C:/QCA410/UI/erricon.png')
+    error_dlg = QMessageBox()
+    error_dlg.setText(msg)
+    error_dlg.setWindowTitle('Surprise~!')
+    error_dlg.setWindowIcon(QIcon(myicon))
+    error_dlg.setIconPixmap(myicon)
+    error_dlg.exec()
+
+def show_question():
+    error_dlg = QMessageBox()
+    result = error_dlg.question(error_dlg,'save to csv', '정말 저장하시겠습니까? \n 저장 후 화면 Data는 사라집니다',
+                    QMessageBox.Yes | QMessageBox.No)
+    if result == QMessageBox.Yes:
+        print("yes")
+        myWindow.saving()
+    else:
+        print('NO,PASS')
+
+class MyWindow(QMainWindow, form_class):
+    def __init__(self):
+        super().__init__()
+        csvpath = 'C:/OLB_FOR_DB/madeCSV'
+        createDirectory(csvpath)
+        self.setupUi(self)
+        # self.setFixedSize(820,880)
+
+
+
+        #셀 정보 기본값 초기화
+        self.rqn_val, self.cid_val, self.ctg_val, self.who_val, self.rdo_val = 'empty','empty','empty','empty','empty'
+        #함수연결
+        self.csv_btn.clicked.connect(self.csvckd)
+        self.rqn_txt.textChanged.connect(self.rqn)
+        self.cid_txt.textChanged.connect(self.cid)
+        self.ctg_txt.textChanged.connect(self.ctg)
+        self.who_txt.textChanged.connect(self.who)
+        self.rdo_txt.textChanged.connect(self.rdo)
+        self.xytable.currentCellChanged.connect(self.getposition)
+
+        #컬럼명 담기
+        self.col = []
+        for i in range(self.xytable.columnCount()):
+            self.col.append(self.xytable.horizontalHeaderItem(i).text())
+        self.df = pd.DataFrame(columns=tuple(self.col))
+
+        #Qtable 데이터 복사
+        copyShortcut = QShortcut(QKeySequence.Copy,self.xytable)
+        copyShortcut.activated.connect(self.copy)
+        pasteShortcut = QShortcut(QKeySequence.Paste, self.xytable)
+        pasteShortcut.activated.connect(self.paste)
+
+    def paste(self):
+        err = 0
+        def is_number(num):
+            try:
+                judge = str(float(num))
+                return False if (judge == 'nan' or judge == 'inf' or judge == '-inf') else True
+            except ValueError:  # num을 float으로 변환 할 수 없는 경우
+                return False
+
+        text = QApplication.clipboard().text()
+        rows = text.split('\n')
+        numRows = len(rows) - 1
+        numColumns = rows[0].count('\t') + 1
+
+        if self.rownum + numRows > self.xytable.rowCount(): #현재위치 및
+            show_msgbox("복사한 Data의 크기가 맞지 않습니다.")
+        for i in range(numRows):
+            columns = rows[i].split('\t')
+            if i+self.rownum < self.xytable.rowCount():
+                for j in range(numColumns):
+                    row = self.rownum + i
+                    column = self.colnum + j
+                    if column < self.xytable.columnCount():
+                        item = QTableWidgetItem()
+                        item.setTextAlignment(Qt.AlignRight | Qt.AlignVCenter)
+                        self.xytable.setItem(row, column, item)
+                        if is_number(columns[j])==True:
+                            self.xytable.item(row, column).setText(columns[j])
+                        else:
+                            err+=1
+
+        if err > 0:
+            show_msgbox(str(err) +"개의 숫자가 아닌 데이터가 있었습니다.")
+            err=0
+        print('paste')
+
+    def copy(self):
+        selectedRangeList = self.xytable.selectedRanges()
+        if selectedRangeList == [] :
+            return
+        text = ""
+        selectedRange = selectedRangeList[0]
+        for i in range(selectedRange.rowCount()):
+            if i > 0:
+                text += "\n"
+            for j in range(selectedRange.columnCount()):
+                if j > 0:
+                    text += "\t"
+                itemA = self.xytable.item(selectedRange.topRow()+i,selectedRange.leftColumn()+j)
+                if itemA :
+                    text += itemA.text()
+        text += '\n'
+        QApplication.clipboard().setText(text)
+        print("copy")
+
+    def rqn(self):
+        self.rqn_val = self.rqn_txt.text()
+    def cid(self):
+        self.cid_val = self.cid_txt.text()
+    def ctg(self):
+        self.ctg_val = self.ctg_txt.text()
+    def who(self):
+        self.who_val = self.who_txt.text()
+    def rdo(self):
+        self.rdo_val = self.rdo_txt.text()
+
+    def csvckd(self):
+        show_question()
+
+
+    def saving(self):
+
+        filename ='C:/OLB_FOR_DB/madeCSV/' +'OLB44_'+ self.rqn_val +'_' + self.cid_val +'_' + self.rdo_val +'.csv'
+        a = 1
+        while os.path.exists(filename):
+            filename ='C:/OLB_FOR_DB/madeCSV/' + 'OLB44_'+ self.rqn_val +'_' + self.cid_val +'_' + self.rdo_val +'('+str(a) +')'+'.csv'
+            a+=1
+
+        columnHeaders = []
+        for j in range(self.xytable.columnCount()):
+            columnHeaders.append(self.xytable.horizontalHeaderItem(j).text())
+
+        for row in range(self.xytable.rowCount()):
+            for col in range(self.xytable.columnCount()):
+                self.df.at[row, columnHeaders[col]] = self.xytable.item(row, col).text()
+
+        self.df.to_csv(filename,encoding = 'CP949',index=False)
+        self.df = pd.DataFrame(columns=tuple(self.col))
+
+        for i in range(len(self.df.index)):
+            for j in range(len(self.col_showed)):
+                self.xytable.setItem(i, j, QTableWidgetItem(str(self.df.loc[i, self.col_showed[j]])))  # 값채워넣고
+
+
+
+    def getposition(self):
+        self.rownum = self.xytable.currentRow()
+        self.colnum = self.xytable.currentColumn()
+        if self.colnum <0: #이 이프문 안넣으면 찍다가 dell로 다 삭제하고 다시 찍을때 1맨위부터데이터쌓임 요상하네~왜 del 모두 수행되면 -1,-1로되는걸까아
+            self.colnum=0
+
+
+if __name__ == "__main__":
+    app = QApplication(sys.argv)
+    app.setStyle("Fusion")
+
+    myWindow = MyWindow()
+    myWindow.setWindowTitle("OLB_DB FILE Maker v0 - Innovation of QA")
+    myicon = QPixmap()
+    myicon.load('C:/OLB_FOR_DB/UI/erricon.png')
+    myWindow.setWindowIcon(QIcon(myicon))
+    myWindow.show()
+
+    app.exec_()
+
