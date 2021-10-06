@@ -1,0 +1,287 @@
+import os
+import sys
+import pandas as pd
+from PyQt5.QtWidgets import *
+from PyQt5.QtWidgets import QMessageBox,QTableWidgetItem,QListView
+from PyQt5 import uic
+from PyQt5.QtGui import QPixmap, QIcon,QKeySequence,QStandardItemModel,QStandardItem, QPixmap, QIcon,QColor
+from PyQt5.QtCore import Qt
+import numpy as np
+import pyqtgraph as pg
+
+form_class = uic.loadUiType("C:/UMP_for_DB/UI/UMP_for_DB.ui")[0]
+
+
+
+def createDirectory(directory):
+    try:
+        if not os.path.exists(directory):
+            os.makedirs(directory)
+    except OSError:
+       show_msgbox('디랙토리 생성 실패')
+
+def show_msgbox(msg):
+    myicon = QPixmap()
+    myicon.load('C:/UMP_for_DB/UI/erricon.png')
+    error_dlg = QMessageBox()
+    error_dlg.setText(msg)
+    error_dlg.setWindowTitle('Surprise~!')
+    error_dlg.setWindowIcon(QIcon(myicon))
+    error_dlg.setIconPixmap(myicon)
+    error_dlg.exec()
+
+def show_question():
+    error_dlg = QMessageBox()
+    result = error_dlg.question(error_dlg,'save to csv', '정말 저장하시겠습니까? \n 저장 후 화면 Data는 사라집니다',
+                    QMessageBox.Yes | QMessageBox.No)
+    if result == QMessageBox.Yes:
+        print("yes")
+        gui.saving()
+        gui.pltupdate()
+    else:
+        print('NO,PASS')
+
+class MyWindow(QMainWindow, form_class):
+    def __init__(self):
+        super().__init__()
+        self.csvpath = 'C:/Lum_for_DB/madeCSV'
+        createDirectory(self.csvpath)
+        self.setupUi(self)
+        # self.setFixedSize(820,880)
+        self.hello = fordrag(self.centralwidget)
+        self.vlay.addWidget(self.hello)
+        #셀 정보 기본값 초기화
+        self.rqn_val, self.cid_val, self.ctg_val, self.who_val, self.rdo_val = '','','','',''
+        #함수연결
+        self.csv_btn.clicked.connect(self.csvckd)
+        self.del_btn.clicked.connect(self.delckd)
+        self.rqn_txt.textChanged.connect(self.rqn)
+        self.cid_txt.textChanged.connect(self.cid)
+        self.ctg_txt.textChanged.connect(self.ctg)
+        self.who_txt.textChanged.connect(self.who)
+        self.rdo_txt.textChanged.connect(self.rdo)
+        self.xytable.currentCellChanged.connect(self.getposition)
+        self.xytable.setColumnWidth(0, 70)
+        self.xytable.setColumnWidth(1, 70)
+        self.xytable.setColumnWidth(2, 80)
+
+        #컬럼명 담기
+        self.col = ['request_id','cell_id', 'test_name','read_out','step','measure','item','op_id','eqp_id','Lum','Cx','Cy','elvdd','point','ptn','ptn_gray','GCM_Current','WT3000_Current']
+        self.col_showed = ['point', 'ptn', 'ptn_gray', 'Lum', 'Cx', 'Cy', 'Cx', 'Cy', 'GCM_Current','WT3000_Current']
+        self.df = pd.DataFrame(columns=tuple(self.col))
+
+        #그래프
+        pg.setConfigOption('background', '#ffffff')  # 화이트
+        pg.setConfigOption('foreground', '#000000')
+        self.p = pg.plot()
+        self.p.setXRange(1, 10)
+        self.p.setYRange(0, 100)
+        self.p.setWindowTitle("title")
+        self.p.setLabel('bottom', '측정 횟수', units='회', **{'font-size': '15pt'})  # 축이름  (숫자색은어떻게하지
+        self.p.getAxis('bottom').setPen(pg.mkPen(color='#000000', width=3))  # 하단 x축 선 색두께랑 색깔  (숫자색은어떻게하지
+        self.p.setLabel('left', 'Lv', units=' cd/m²', **{'font-size': '15pt'})  # 왼쪽 축이름, 단위 여기서 컬러는뭐지 (숫자색은어떻게하지
+        self.p.getAxis('left').setPen(pg.mkPen(color='#000000', width=3))  # 왼쪽 축색, 레이블색...
+        self.ax1 = self.p.getAxis('bottom')
+
+        self.curve = self.p.plot(x=[], y=[], pen=pg.mkPen(color='#000000'))  # 빈플롯 하나 만들어놓기
+
+        self.p.showAxis('right')  # 오른쪽축도 추가로 표시 시켜
+        self.p.setLabel('right', 'xy', **{'font-size': '15pt'})
+        self.p.getAxis('right').setPen(pg.mkPen(color='#ff00ff', width=3))
+
+        self.p2 = pg.ViewBox()  # 아마 그래프를 찍을공간을 추가로 만들어야하나보다,;  축 별도관리를위해서일수도있을듯
+        self.p.scene().addItem(self.p2)  # 원래 그래프에 객채를 주가시키고
+        self.p.getAxis('right').linkToView(self.p2)  # 오른쪽축을 링크를시키는데...이짓을 해야되나?
+        self.p2.setXLink(self.p)  # x축은 공유하기로하는건가 ?
+        self.p2.setYRange(0.1, 0.9)  # 초기 축
+        self.curve2 = self.p.plot(x=[], y=[], pen=pg.mkPen(color='#ff0000'))  # ..흠,,
+        self.curve3 = self.p.plot(x=[], y=[], pen=pg.mkPen(color='#00ff00'))  # ..흠,,
+        self.p2.addItem(self.curve2)
+        self.p2.addItem(self.curve3)
+
+        def updateViews():
+            self.p2.setGeometry(self.p.getViewBox().sceneBoundingRect())
+            self.p2.linkedViewChanged(self.p.getViewBox(), self.p2.XAxis)
+
+        self.p.getViewBox().sigResized.connect(updateViews)
+        self.pltvertical.addWidget(self.p)
+
+
+
+    def rqn(self):
+        self.rqn_val = self.rqn_txt.text()
+    def cid(self):
+        self.cid_val = self.cid_txt.text()
+    def ctg(self):
+        self.ctg_val = self.ctg_txt.text()
+    def rdo(self):
+        self.rdo_val = self.rdo_txt.text()
+    def who(self):
+        self.who_val = self.who_txt.text()
+    def csvckd(self):
+        show_question()
+
+    def delckd(self):
+        self.df = pd.DataFrame(columns=tuple(self.col))
+        self.xytable.setRowCount(len(self.df.index))
+        gui.rqn_txt.setReadOnly(False)
+        gui.rqn_txt.setStyleSheet('background:white')
+        gui.cid_txt.setReadOnly(False)
+        gui.cid_txt.setStyleSheet('background:white')
+        gui.ctg_txt.setReadOnly(False)
+        gui.ctg_txt.setStyleSheet('background:white')
+        gui.who_txt.setReadOnly(False)
+        gui.who_txt.setStyleSheet('background:white')
+        gui.rdo_txt.setReadOnly(False)
+        gui.rdo_txt.setStyleSheet('background:white')
+
+    def saving(self):
+        filename = self.csvpath+'/UMP_'+ self.rqn_val + '_' + self.cid_val + '_' + self.rdo_val + '_' + self.who_val + '.csv'
+
+        a = 1
+        while os.path.exists(filename):
+            filename = self.csvpath+ '/UMP_' + self.rqn_val + '_' + self.cid_val + '_' + self.rdo_val + '_' + self.who_val + '('+str(a)+')'+'.csv'
+            a+=1
+
+        self.df.to_csv(filename,encoding = 'CP949',index=False)
+
+        self.df = pd.DataFrame(columns=tuple(self.col))
+        self.xytable.setRowCount(len(self.df.index))
+        gui.rqn_txt.setReadOnly(False)
+        gui.rqn_txt.setStyleSheet('background:white')
+        gui.cid_txt.setReadOnly(False)
+        gui.cid_txt.setStyleSheet('background:white')
+        gui.ctg_txt.setReadOnly(False)
+        gui.ctg_txt.setStyleSheet('background:white')
+        gui.who_txt.setReadOnly(False)
+        gui.who_txt.setStyleSheet('background:white')
+        gui.rdo_txt.setReadOnly(False)
+        gui.rdo_txt.setStyleSheet('background:white')
+
+
+    def pltupdate(self):
+        if len(self.df) >0:
+            xaxis = np.array(range(1,len(self.df)+1,1))
+            xx=np.array(self.df.Cx.astype(float))
+            yy=np.array(self.df.Cy.astype(float))
+            lvlv=np.array(self.df.Lum.astype(float))
+            e=e=np.concatenate([xx,yy],axis=0)
+            self.curve.setData(x=xaxis, y=lvlv, symbol='o',symbolBrush =(0, 0, 0), symbolSize=5)
+            self.curve2.setData(x=xaxis, y=xx, symbol='o', symbolBrush =(200, 0,0), symbolSize=5)
+            self.curve3.setData(x=xaxis, y=yy, symbol='o',symbolBrush =(0, 200,0),symbolSize=5)
+            self.p.setXRange(1,max(xaxis) if len(xaxis) > 1 else 1)
+            self.p.setYRange(int(min(lvlv)) if len(lvlv) > 0 else 0, int(max(lvlv)) if len(lvlv) > 0 else 100)
+            self.p2.setYRange(min(e) if len(e) > 1 else 0, max(e) if len(e) > 1 else 0)
+            self.num_data.display(len(self.df))
+            self.num_point.display(len(np.unique(np.array(gui.df.loc[:, 'point']))))
+            self.num_ptn.display(len(np.unique(np.array(gui.df.loc[:, 'ptn']))))
+            self.num_gray.display(len(np.unique(np.array(gui.df.loc[:, 'ptn_gray']))))
+            self.num_onedata.display(str(round(len(self.df)/len(np.unique(np.array(gui.df.loc[:, 'point']))))))
+
+
+            self.xytable.setRowCount(len(self.df.index))  # table에 행 수만큼 길이조정하고
+
+            for i in range(len(self.df.index)):
+                for j in range(len(self.col_showed)):
+                    item=QTableWidgetItem(str(self.df.loc[i, self.col_showed[j]]))
+                    item.setTextAlignment(Qt.AlignCenter)
+                    self.xytable.setItem(i, j,item )  # 얼라인맞추기위해 item변수로뺏음
+
+            #self.xytable.resizeColumnToContents(0)
+
+            self.xytable.setColumnWidth(0,70)
+            self.xytable.setColumnWidth(1,70)
+            self.xytable.setColumnWidth(2,80)
+
+
+            #self.xytable.resizeRowsToContents()
+            #self.xytable.horizontalHeader().setStyleSheet("background-color:#404040;color:#FFFFFF")
+            #self.xytable.setItemDelegateForColumn(4,self.Delegate())
+    class Delegate(QStyledItemDelegate):
+        def paint(self, painter, option, index):
+            painter.fillRect(option.rect, QColor(230,15,15))
+            QStyledItemDelegate.paint(self, painter, option, index)
+
+    def getposition(self):
+        self.rownum = self.xytable.currentRow()
+        self.colnum = self.xytable.currentColumn()
+        if self.colnum <0: #이 이프문 안넣으면 찍다가 dell로 다 삭제하고 다시 찍을때 1맨위부터데이터쌓임 요상하네~왜 del 모두 수행되면 -1,-1로되는걸까아
+            self.colnum=0
+
+
+class fordrag(QListView):
+    def __init__(self, title):
+        super().__init__(title)
+        self.setAcceptDrops(True)
+    def dragEnterEvent(self, e):
+        e.acceptProposedAction()
+    def dragMoveEvent(self, e):
+        e.acceptProposedAction()
+
+    def dropEvent(self, e):
+
+            #포인트 값 정도는 조사를순차적으로 올라가는지 조사해도되나 ,,,
+        try:
+
+            if gui.rqn_val and gui.cid_val and gui.rdo_val :
+                gui.rqn_txt.setReadOnly(True)
+                gui.rqn_txt.setStyleSheet('background:lightgray')
+                gui.cid_txt.setReadOnly(True)
+                gui.cid_txt.setStyleSheet('background:lightgray')
+                gui.ctg_txt.setReadOnly(True)
+                gui.ctg_txt.setStyleSheet('background:lightgray')
+                gui.who_txt.setReadOnly(True)
+                gui.who_txt.setStyleSheet('background:lightgray')
+                gui.rdo_txt.setReadOnly(True)
+                gui.rdo_txt.setStyleSheet('background:lightgray')
+
+                self.hi = e.mimeData().text().replace('file:///', '')
+                raw = pd.read_csv(self.hi, skiprows=[0, 1])
+                a= [gui.rqn_val,gui.cid_val, gui.ctg_val,gui.rdo_val,'inspection_pc','luminance','UMP',gui.who_val,'','LUM','CX','CY','','POINT','PTN','PTN_GRAY','GCM_CURRENT','WT3000_CURRENT']
+                arry = np.tile(a,(len(raw),1))
+                gui.df = pd.DataFrame(arry, columns=tuple(gui.col))
+
+                gui.df.iloc[:, 9:12]  = raw.iloc[:, 5:8] #lum,cx,cy
+                gui.df.iloc[:, 13:16] = raw.iloc[:, 2:5] #point,ten,ptn_gray
+                gui.df.iloc[:, 16:]   = raw.iloc[:, 8:10] #GCM_CURRENT,WT3000_CURRENT
+
+                gui.pltupdate()
+                model = QStandardItemModel()
+                model.appendRow(QStandardItem(self.hi)) #글짜찍는거
+                self.setModel(model)
+
+            else:
+                show_msgbox("왼쪽의 값 들을 입력하셔야해요. ")
+        except Exception as e:
+                show_msgbox("에러발생에러발생"+str(e)+"\n\n 파일 확인하시고 \n 입력 창 활성화 시키려거든 delete 누르세요 " )
+
+
+
+
+
+        """열추가하는 다양한 방법 
+        #dd= pd.DataFrame([myWindow.col],columns=tuple(myWindow.col))
+        #for i in range(len(raw)):
+            #느려myWindow.df = myWindow.df.append(pd.Series(myWindow.col, index=myWindow.df.columns), ignore_index=True)
+            #쫌느려myWindow.df= pd.DataFrame(np.insert(myWindow.df.values, i, myWindow.col, axis=0), columns=tuple(myWindow.col))
+            #myWindow.df=myWindow.df.append(dd)# 젤빠른데, 아예 numpy 상태에서 추가하는게 더...
+        """
+
+
+#print(df.iloc[:,3])
+#print(df.columns
+
+
+if __name__ == "__main__":
+    app = QApplication(sys.argv)
+    app.setStyle("Fusion")
+
+    gui = MyWindow()
+    gui.setWindowTitle("UMP_for_DB FILE Maker v0 - Innovation of QA")
+    myicon = QPixmap()
+    myicon.load('C:/UMP_for_DB/UI/erricon.png')
+    gui.setWindowIcon(QIcon(myicon))
+    gui.show()
+
+    app.exec_()
+
