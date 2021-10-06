@@ -1,0 +1,666 @@
+import os
+import sys
+from time import sleep
+import pandas as pd
+import numpy as np
+import serial
+import serial.tools.list_ports as sp
+from PyQt5.QtWidgets import *
+from PyQt5.QtWidgets import QMessageBox,QTableWidgetItem,QShortcut
+from PyQt5 import uic
+from PyQt5.QtGui import QPixmap, QIcon,QKeySequence
+from PyQt5.QtCore import Qt
+import matplotlib.pyplot as plt
+from matplotlib.backends.backend_qt5agg import FigureCanvasQTAgg as FigureCanvas
+import WorkerThread
+import pyqtgraph as pg
+
+'''
+욕심을 부리면 
+1.값변경에 관해서 컨트롤 젯트가 먹게끔.....
+2.영역복사 된게 table 에서 붙혀넣기되게할수있으까?
+
+
+특정 열 색깔 바꾸는법 찾아보기   self.xytable.horizontalHeader.setStyleSheet("background:rgb(30,30,30)")
+
+인스톨할때 ui파일,이미지 필요없게..?
+spec파일에 대해서도 좀알아봐야할거같다 ,,
+'''
+
+form_class = uic.loadUiType("C:/QCA410/UI/QCA410_DB.ui")[0]
+
+def createDirectory(directory):
+    try:
+        if not os.path.exists(directory):
+            os.makedirs(directory)
+    except OSError:
+       show_msgbox('디랙토리 생성 실패')
+def show_msgbox(msg):
+    myicon = QPixmap()
+    myicon.load('C:/QCA410/UI/erricon.png')
+    error_dlg = QMessageBox()
+    error_dlg.setText(msg)
+    error_dlg.setWindowTitle('Surprise~!')
+    error_dlg.setWindowIcon(QIcon(myicon))
+    error_dlg.setIconPixmap(myicon)
+    error_dlg.exec()
+def show_question():
+    error_dlg = QMessageBox()
+    result = error_dlg.question(error_dlg,'save to csv', '정말 저장하시겠습니까? \n 저장 후 화면 Data는 사라집니다',
+                    QMessageBox.Yes | QMessageBox.No)
+    if result == QMessageBox.Yes:
+        print("yes")
+        myWindow.saving()
+        myWindow.pltvertical.removeWidget(myWindow.p)
+        myWindow.pltvertical.addWidget(myWindow.p)
+    else:
+        print('pass')
+
+class MyWindow(QMainWindow, form_class):
+    def __init__(self):
+        super().__init__()
+        self.tcom="hi"
+        self.W1 = WorkerThread.create_worker(0)
+        self.logpath = 'C:/Lum_for_DB/log'
+        self.csvpath = 'C:/Lum_for_DB/madeCSV'
+        createDirectory(self.logpath)
+        createDirectory(self.csvpath)
+        self.setupUi(self)
+        self.setFixedSize(900,900)
+
+        # 그래프 표시 초기셋팅
+        pg.setConfigOption('background', '#ffffff')  # 화이트
+        pg.setConfigOption('foreground', '#000000')
+        self.p = pg.plot()
+        self.p.setXRange(1, 10)
+        self.p.setYRange(0, 100)
+        self.p.setWindowTitle("title")
+        self.p.setLabel('bottom', '측정 횟수', units='회', **{'font-size': '15pt'})  # 축이름  (숫자색은어떻게하지
+        self.p.getAxis('bottom').setPen(pg.mkPen(color='#000000', width=3))  # 하단 x축 선 색두께랑 색깔  (숫자색은어떻게하지
+        self.p.setLabel('left', 'Lv', units=' cd/m²', **{'font-size': '15pt'})  # 왼쪽 축이름, 단위 여기서 컬러는뭐지 (숫자색은어떻게하지
+        self.p.getAxis('left').setPen(pg.mkPen(color='#000000', width=3))  # 왼쪽 축색, 레이블색...
+        self.ax1 = self.p.getAxis('bottom')
+
+        self.curve = self.p.plot(x=[], y=[], pen=pg.mkPen(color='#000000'))  # 빈플롯 하나 만들어놓기
+
+        self.p.showAxis('right')  # 오른쪽축도 추가로 표시 시켜
+        self.p.setLabel('right', 'xy', **{'font-size': '15pt'})
+        self.p.getAxis('right').setPen(pg.mkPen(color='#ff00ff', width=3))
+
+        self.p2 = pg.ViewBox()  # 아마 그래프를 찍을공간을 추가로 만들어야하나보다,;  축 별도관리를위해서일수도있을듯
+        self.p.scene().addItem(self.p2)  # 원래 그래프에 객채를 주가시키고
+        self.p.getAxis('right').linkToView(self.p2)  # 오른쪽축을 링크를시키는데...이짓을 해야되나?
+        self.p2.setXLink(self.p)  # x축은 공유하기로하는건가 ?
+        self.p2.setYRange(0.1, 0.9)  # 초기 축
+        self.curve2 = self.p.plot(x=[], y=[], pen=pg.mkPen(color='#ff0000')) # ..흠,,
+        self.curve3 = self.p.plot(x=[], y=[], pen=pg.mkPen(color='#00ff00')) # ..흠,,
+        self.p2.addItem(self.curve2)
+        self.p2.addItem(self.curve3)
+        def updateViews():
+            self.p2.setGeometry(self.p.getViewBox().sceneBoundingRect())
+            self.p2.linkedViewChanged(self.p.getViewBox(), self.p2.XAxis)
+        self.p.getViewBox().sigResized.connect(updateViews)
+        self.pltvertical.addWidget(self.p)
+
+
+
+
+    #Qtable 데이터 복사
+        copyShortcut = QShortcut(QKeySequence.Copy,self.xytable)
+        copyShortcut.activated.connect(self.copy)
+        pasteShortcut = QShortcut(QKeySequence.Paste, self.xytable)
+        pasteShortcut.activated.connect(self.paste)
+
+    #오류방지를 위한 변수 초기화
+        self.rownum = -1
+        self.colnum = 0
+        self.flag, self.comflag = 0,0
+    #셀 정보 기본값 초기화
+        self.rqn_val, self.cid_val, self.ctg_val, self.who_val, self.rdo_val,self.ca_val = 'empty','empty','empty','empty','empty','empty'
+
+    #함수연결
+        self.cnt_btn.clicked.connect(self.cntckd)
+        self.tcnt_btn.clicked.connect(self.tcntckd)
+        self.t_read.clicked.connect(self.t_el_read)
+        self.t_elset.clicked.connect(self.t_el_set)
+        self.t_start_btn.clicked.connect(self.t_el_autoset_thread)
+
+        self.zcal_btn.clicked.connect(self.zcalckd)
+        self.msr_btn.clicked.connect(self.msrckd)
+        self.csv_btn.clicked.connect(self.csvckd)
+        self.del_btn.clicked.connect(self.delckd)
+        self.rqn_txt.textChanged.connect(self.rqn)
+        self.cid_txt.textChanged.connect(self.cid)
+        self.ctg_txt.textChanged.connect(self.ctg)
+        self.who_txt.textChanged.connect(self.who)
+        self.rdo_txt.textChanged.connect(self.rdo)
+        self.ca_txt.textChanged.connect(self.ca)
+        self.xytable.cellChanged.connect(self.valchanged)
+        self.xytable.currentCellChanged.connect(self.getposition)
+
+        #컬럼명 담기
+        self.col = ['request_id','cell_id', 'test_name','read_out','step','measure','item','op_id','eqp_id','Lum','Cx','Cy','elvdd','point','ptn','ptn_gray','GCM_Current','WT3000_Current']
+        self.col_showed = ['request_id', 'cell_id', 'test_name', 'read_out', 'op_id', 'Lum', 'Cx', 'Cy', 'elvdd']
+
+        self.df = pd.DataFrame(columns=tuple(self.col))
+        self.a = [self.rqn_val, self.cid_val, self.ctg_val, self.rdo_val, 'inspection_pc', 'luminance', '36P',
+                  self.who_val, self.ca_val, 'lv', 'x', 'y', '', '', '', '', '', '']
+
+
+    def paste(self):
+        text = QApplication.clipboard().text()
+        rows = text.split('\n')
+        numRows = len(rows) - 1
+        numColumns = rows[0].count('\t') + 1
+
+        if self.rownum + numRows > self.xytable.rowCount():
+            prevRowCount = self.xytable.rowCount()
+            self.xytable.setRowCount(self.rownum + numRows)
+            for i in range(prevRowCount, self.rownum + numRows):
+                for kk in range(self.xytable.columnCount()):
+                    item = QTableWidgetItem()
+                    item.setTextAlignment(Qt.AlignRight | Qt.AlignVCenter)
+                    self.xytable.setItem(i, kk, item)
+        for i in range(numRows):
+            columns = rows[i].split('\t')
+            for j in range(numColumns):
+                row = self.rownum + i
+                column = self.colnum + j
+                if column < self.xytable.columnCount():
+                    self.xytable.item(row, column).setText(columns[j])
+        print('paste')
+    def copy(self):
+        selectedRangeList = self.xytable.selectedRanges()
+        if selectedRangeList == [] :
+            return
+        text = ""
+        selectedRange = selectedRangeList[0]
+        for i in range(selectedRange.rowCount()):
+            if i > 0:
+                text += "\n"
+            for j in range(selectedRange.columnCount()):
+                if j > 0:
+                    text += "\t"
+                itemA = self.xytable.item(selectedRange.topRow()+i,selectedRange.leftColumn()+j)
+                if itemA :
+                    text += itemA.text()
+        text += '\n'
+        QApplication.clipboard().setText(text)
+        print("copy")
+
+    def rqn(self):
+        self.rqn_val = self.rqn_txt.text()
+    def cid(self):
+        self.cid_val = self.cid_txt.text()
+    def ctg(self):
+        self.ctg_val = self.ctg_txt.text()
+    def who(self):
+        self.who_val = self.who_txt.text()
+    def rdo(self):
+        self.rdo_val = self.rdo_txt.text()
+    def ca(self):
+        self.ca_val = self.ca_txt.text()
+
+    def pltupdate(self):
+        if len(self.df) >0:
+            xaxis = np.array(range(1,len(self.df)+1,1))
+            xx=np.array(self.df.Cx.astype(float))
+            yy=np.array(self.df.Cy.astype(float))
+            lvlv=np.array(self.df.Lum.astype(float))
+            e=e=np.concatenate([xx,yy],axis=0)
+            self.curve.setData(x=xaxis, y=lvlv, symbol='o',symbolBrush =(0, 0, 0), symbolSize=5)
+            self.curve2.setData(x=xaxis, y=xx, symbol='o', symbolBrush =(200, 0,0), symbolSize=5)
+            self.curve3.setData(x=xaxis, y=yy, symbol='o',symbolBrush =(0, 200,0),symbolSize=5)
+            self.p.setXRange(1,max(xaxis) if len(xaxis) > 1 else 1)
+            self.p.setYRange(int(min(lvlv)) if len(lvlv) > 0 else 0, int(max(lvlv)) if len(lvlv) > 0 else 100)
+            print(min(lvlv))
+            self.p2.setYRange(min(e) if len(e) > 1 else 0, max(e) if len(e) > 1 else 0)
+
+    def cntcheck(self,stop_obj, args):
+        while True:
+            sleep(1)
+            print('gogo')
+            isthere = 0
+            if self.comflag == 1: # 최초 연결되는 작업이있었으면 실행
+                list_serial = sp.comports() #PC에 연결된 COMPORT 긁기
+                #pattern = "CH340"
+                #pattern = "직렬"
+                pattern = "Measuring"
+                if len(list_serial)<1:  #컴포트읽히는게아예없으면 에러
+                    self.comflag = 0
+                    show_msgbox('연결 끊김 발생!')
+                    # return
+                else:                #아예없는건아니라면 있는거 조사해서 com번호가 기존연결됐던 번호랑 같은지 조사
+                    for port in list_serial:
+                        if pattern in str(port): #근데뭐이런경우는거의없긴할거같은데 연결된장치중에 ca410이 있으면,
+                            isthere=1  #
+                            com2 = port.device
+                            if com2 != self.com : # 컴포트숫자조사해서 기존 연결된 숫자랑 다르면 에러
+                                self.comflag =0
+                                show_msgbox('연결 끊김 발생!!~!!')
+                                # return
+                    if isthere == 0: # 컴포트 읽힌거중에 ca410이 여전히 있으면 동작안하고 없으면 동작하는거야
+                        # isthere = 1
+                        self.comflag = 0
+                        show_msgbox('연결 끊김 발생!~~! ')
+
+                        # return
+
+    def tcntckd(self):
+
+        self.list_serial = sp.comports()
+        pattern = "Silicon"
+        for port in self.list_serial:
+            if pattern in str(port):
+
+                self.tcom = port.device
+        try:
+
+            tserial.x_SerialOpen(self.tcom)
+            print(self.tcom)
+            print(type(self.tcom))
+            show_msgbox('\n 디버그보드를 찾았어요\n\n  확인시 T-CON 연결 Check\n\n ')
+            tserial.model_Check(self.tcom)
+            self.tflag = 1
+            if '[' in tserial.txt:
+                if '[]' in tserial.txt:
+                    show_msgbox('\n패널 전원 확인 및 재시도 해보세요! 안되면 리셋! \n'+tserial.txt)
+                else:
+                    show_msgbox('\n연결완료! \n'+tserial.txt)
+                    tserial.ser.close()
+            else:
+                show_msgbox('\n\n응답없음')
+                self.tflag=0
+        except serial.SerialException:
+            show_msgbox('연결상태나 타프로그램 확인하세요. \n 이미 연결중일 수도 있습니다.  ')
+            tserial.ser.close()
+        except AttributeError:
+            show_msgbox('인식된 Debug 보드가 없습니다')
+        except UnboundLocalError:
+            show_msgbox('DEBUG보드 연결해주세요')
+
+    def t_el_read(self):
+        try:
+            if "COM" in self.tcom:
+                print("com in tcom")
+                pass
+            else:
+                show_msgbox("패널 연결 하셨나요?")
+                return
+
+
+            tserial.x_SerialOpen(self.tcom)
+            command1 = "param AP 0x1C0002 0x0000\n"
+            tserial.serial_write_port(self.tcom,command1)
+            command1 = "param? AP 0x1C0006\n"  # 가변 값 확인 0로
+            tserial.serial_write_port(self.tcom,command1)
+            code=int(tserial.result[-6:], 16)
+            elvol = ((code - 164) / 25.1 + 120)*0.1
+            self.lcdNumber.display(str(round(elvol,1))+'V')
+            command1 = "param AP 0x1C0002 0x0001\n"
+            tserial.serial_write_port(self.tcom,command1)
+            tserial.ser.close()
+        except serial.SerialException:
+            show_msgbox('이미 통신중 이거나 \n 재연결이라면 연결상태 확인하세요  ')
+
+    def t_el_set(self):
+        try:
+
+            if "COM" in self.tcom:
+                print("com in tcom")
+                pass
+            else:
+                show_msgbox("패널 연결 하셨나요?")
+                return
+
+            tserial.x_SerialOpen(self.tcom)
+            command1 = "param AP 0x1C0002 0x0000\n"
+            tserial.serial_write_port(self.tcom,command1)
+
+            a = float(self.spinbox_4.text())
+            a_change = round((a - int(12)) * 251 + 164)  # 변환식: V를 바꾸어줌
+            hex_a = hex(a_change)
+
+            command1 = "param AP 0x1C0006 " + str(hex_a) + "\n"  # ←오타 수정 후
+            tserial.serial_write_port(self.tcom,command1)
+
+            command1 = "param? AP 0x1C0006\n"  # 가변 값 확인 0로
+            tserial.serial_write_port(self.tcom,command1)
+
+            code=int(tserial.result[-6:], 16)
+            elvol = ((code - 164) / 25.1 + 120)*0.1
+
+            command1 = "param AP 0x1C0002 0x0001\n"
+            tserial.serial_write_port(self.tcom,command1)
+
+            self.lcdNumber.display(str(round(elvol,1))+"V")
+            tserial.ser.close()
+        except serial.SerialException:
+            show_msgbox('이미 통신중 이거나 \n 재연결이라면 연결상태 확인하세요  ')
+
+    def t_el_autoset_thread(self):
+        WorkerThread.start_worker(*myWindow.W1, myWindow.t_el_autoset, None,_finished_func=lambda: print("Finished"))#@#@#@#@
+    def t_el_autoset(self,stop_obj, args):
+        try:
+
+            if self.comflag == 1:
+                if "COM" in self.tcom:
+                    print("com in tcom")
+                    pass
+                else:
+                    show_msgbox("패널 연결 하셨나요?")
+                    return
+
+                tserial.x_SerialOpen(self.tcom)
+
+                command1 = "param AP 0x1C0002 0x0000\n"
+                tserial.serial_write_port(self.tcom, command1)
+
+                startvol = int(myWindow.spinBox.text())*10
+                endvol = int(myWindow.spinBox_2.text())*10
+                intervol = int(float(myWindow.spinBox_3.text())*-10)
+                self.elvol=0.0
+                for i in range(startvol,endvol-1,intervol):
+                    print(i)
+                    a_change = int(round((int(i) - 120) * 25.1 + 164))  # 변환식: V를 바꾸어줌
+                    hex_a = hex(a_change)
+                    command1 = "param AP 0x1C0006 " + str(hex_a) + "\n"
+                    tserial.serial_write_port(self.tcom, command1)
+
+                    command1 = "param? AP 0x1C0006\n"  # 가변 값 확인
+                    tserial.serial_write_port(self.tcom, command1)
+                    code = int(tserial.result[-6:], 16)
+                    self.elvol= ((code - 164) / 25.1 + 120) * 0.1
+                    self.lcdNumber.display(str(round(self.elvol, 1))+"V")
+                    self.msrauto()
+
+                command1 = "param AP 0x1C0002 0x0001\n"
+                tserial.serial_write_port(self.tcom, command1)
+                tserial.ser.close()
+            else:
+                show_msgbox('CA410 장치가 없거나 Z-CAL 되지 않았습니다. ')
+        except serial.SerialException:
+            show_msgbox('이미 통신중 이거나 \n 재연결이라면 연결상태 확인하세요  ')
+
+    def cntckd(self):
+        self.list_serial = sp.comports()
+        #pattern = "CH340"
+        #pattern = "직렬"
+        pattern = "Measuring"
+
+        for port in self.list_serial:
+            if pattern in str(port):
+                self.com = port.device
+
+        try:
+            ca410.Connecting(self.com)
+
+            self.comflag = 1
+            show_msgbox('\n기기 연결 완료\n\n  확인시 0-CAL\n\n ')
+            if 'OK' in ca410.Command('ZRC'):
+                show_msgbox('\n\n0-CAL 완료 ')
+            else:
+                show_msgbox('\n\n응답없음')
+        except serial.SerialException:
+            show_msgbox('이미 통신중 이거나 \n 재연결이라면 연결상태 확인하세요  ')
+        except AttributeError:
+            show_msgbox('CA410 연결해주세요! ')
+        except UnboundLocalError:
+            show_msgbox('CA410 연결해주세요')
+
+    #제로캘 완료될떄까지 창끄지않게 수정하면좋겠다..
+    def zcalckd(self):
+        try:
+            print(ca410.Command('ZRC'))
+            show_msgbox('\n\n0-CAL 완료 ')
+        except AttributeError:
+            show_msgbox('\n\n연결 확인 해주세요 ')
+        except serial.SerialException:
+            show_msgbox('통신에 오류가 발생했습니다.')
+        except UnboundLocalError:
+            show_msgbox('장치를 연결해주세요')
+    def msrckd(self):
+        #self.comflag=1 ###########################################
+        if self.comflag == 1:
+            if self.rownum < 0: #프로그램실행시 처음에 -1로 초기화를해놓는데  이래야 초기값에 del을 눌렀을때 에러방지를 할수있음
+                self.rownum = -1
+
+            self.flag=1 #플래그를 넣어놔야 어펜드가 아니라 값을클릭해서바꿀때 만 valchange가 이루어진다 안그러면 데이터그냥쌓을때 뻑남 왜그런지 생각하기귀찮음 ㅠ
+            #a = [self.rqn_val, self.cid_val, self.ctg_val, self.rdo_val, self.who_val, 'x값','y값','Lv값']
+            #self.col = ['request_id', 'test_name', 'cell_id', 'read_out', 'step', 'measure', 'item', 'op_id', 'eqp_id',
+             #           'Lum', 'Cx', 'Cy', 'elvdd', 'point', 'ptn', 'ptn_gray', 'GCM_Current', 'WT3000_Current']
+
+            self.a = [self.rqn_val,self.cid_val,  self.ctg_val,self.rdo_val,'inspection_pc','luminance','36P', self.who_val,self.ca_val, 'lv','x','y','','','','','','']
+
+            #a[9:12] = [500,0.8,0.1]#######################################lehtlf
+            self.a[9:12]= ca410.Measure()##@@@@@@@@@
+            #ca410.overflag=0#######################
+
+            if ca410.overflag==0:
+                self.df = pd.DataFrame(np.insert(self.df.values,self.rownum+1,self.a,axis=0),columns=tuple(self.col))
+                self.xytable.setRowCount(len(self.df.index))  # table에 행 수만큼 길이조정하고
+
+                for i in range(len(self.df.index)):
+                    for j in range(len(self.col_showed)):
+                        self.xytable.setItem(i,j, QTableWidgetItem(str(self.df.loc[i, self.col_showed[j]])))  # 값채워넣고
+
+                self.xytable.setCurrentCell(self.rownum+1,self.colnum)
+                self.flag=0
+                self.pltupdate()
+                self.savinglog()
+        else:
+            show_msgbox('CA410 장치가 없거나 Z-CAL 되지 않았습니다. ')
+    def msrauto(self):
+
+        if self.comflag == 1:
+            if self.rownum < 0: #프로그램실행시 처음에 -1로 초기화를해놓는데  이래야 초기값에 del을 눌렀을때 에러방지를 할수있음
+                self.rownum = -1
+
+            self.flag=1 #플래그를 넣어놔야 어펜드가 아니라 값을클릭해서바꿀때 만 valchange가 이루어진다 안그러면 데이터그냥쌓을때 뻑남 왜그런지 생각하기귀찮음 ㅠ
+
+            self.a = [self.rqn_val ,self.cid_val, self.ctg_val, self.rdo_val,'inspection_pc','luminance','ELVDD', self.who_val,self.ca_val, 'lv','x','y', str(round(myWindow.elvol, 1))+"V",'','','','','']
+            self.a[9:12] = ca410.Measure()
+
+            if ca410.overflag==0:
+                self.df = pd.DataFrame(np.insert(self.df.values,self.rownum+1,self.a,axis=0),columns=tuple(self.col))
+                self.xytable.setRowCount(len(self.df.index))  # table에 행 수만큼 길이조정하고
+
+                for i in range(len(self.df.index)):
+                    for j in range(len(self.col_showed)):
+                        self.xytable.setItem(i,j, QTableWidgetItem(str(self.df.loc[i, self.col_showed[j]])))  # 값채워넣고
+                self.xytable.setCurrentCell(self.rownum+1,self.colnum)
+                self.flag=0
+                self.pltupdate()
+                self.savinglog()
+        else:
+            show_msgbox('CA410 장치가 없거나 Z-CAL 되지 않았습니다. ')
+
+
+    def csvckd(self):
+        show_question()
+    def delckd(self):
+        self.flag=1
+        #아씨 왜  2번째줄 클릭하고 삭제하면 2번째가 아니라 3번째가 날라가지 아씨 지금은안그러는데 rownum -1값과 연관이있는듯
+        if self.rownum > -1:
+            self.df.drop(self.rownum, inplace=True)       # df에서 삭제하려는 행 빼버리고
+            self.df.reset_index(drop=True, inplace=True)  # 인덱스 재반영
+            self.xytable.setRowCount(len(self.df.index))  # table에 행 수만큼 길이조정하고
+
+            for i in range(len(self.df.index)):
+                for j in range(len(self.col_showed)):
+                    self.xytable.setItem(i, j, QTableWidgetItem(str(self.df.loc[i, self.col_showed[j]])))  # 값채워넣고
+
+
+
+
+            print(self.rownum)
+            self.savinglog()
+            self.pltupdate()
+        else:
+            show_msgbox("더이상 삭제 할 행이 없습니다.")
+        self.flag = 0
+    def savinglog(self):
+        filename =self.logpath +'/Lum_'+  self.a[6] +'_'+self.rqn_val +'_' + self.cid_val +'_'+ self.rdo_val +'_' + self.who_val +'.csv'
+        self.df.to_csv(filename,encoding = 'CP949',index=False)
+    def saving(self):
+        filename =self.csvpath +'/Lum_'+self.a[6]+'_' +self.rqn_val +'_' + self.cid_val +'_' + self.rdo_val +'_'+ self.who_val +'.csv'
+        a = 1
+        while os.path.exists(filename):
+            filename =self.csvpath +'/Lum_'+ self.a[6]+'_' +self.rqn_val +'_' + self.cid_val +'_' + self.rdo_val +'_'+ self.who_val  +'('+str(a) +')'+'.csv'
+            a+=1
+        self.df.to_csv(filename,encoding = 'CP949',index=False)
+        self.flag == 1
+        self.df = pd.DataFrame(columns=tuple(self.col))
+        self.xytable.setRowCount(len(self.df.index))
+        self.flag == 0
+    def valchanged(self):
+        # 이거 데이터 변경할때만 동작할수있또록 flag 쓰자, 측정할떄 1로 바꾸고 0으로 다시돌려놓잖아
+        # 삭제할때랑 값변경못하게 잠굴때도 고려해야겠다
+        if self.flag == 0:
+            decval= self.xytable.item(self.rownum, self.colnum).text()
+            self.df.iloc[self.rownum,self.colnum]=decval
+    def getposition(self):
+        self.rownum = self.xytable.currentRow()
+        self.colnum = self.xytable.currentColumn()
+        if self.colnum <0: #이 이프문 안넣으면 찍다가 dell로 다 삭제하고 다시 찍을때 1맨위부터데이터쌓임 요상하네~왜 del 모두 수행되면 -1,-1로되는걸까아
+            self.colnum=0
+class CA410Control(object):
+    def __init__(self):
+        self.device =''
+    def Connecting(self,comport):
+        self.device = serial.Serial(str(comport))
+        print(self.device)
+    def PortClose(self):
+        self.device.close()
+    def Command(self, command):
+        send = command + "\r"
+        self.device.write(send.encode("UTF-8"))
+        return str(self.device.read_until(b"\r"))
+    def ZeroCal(self):
+        self.Command("ZRC")
+    def Measure(self):
+        self.overflag = 0
+        receive = self.Command("MES,2")
+
+        if 'ER' in receive:
+            show_msgbox("측정값에 이상이 있습니다.\n OVER RANGE")
+            receive = [0, 0, 0]
+            self.overflag=1
+            return receive
+        hi=receive.split(',')
+
+        lvxy=['l','x','y']
+
+        lvxy[0]=hi[hi.index('P1')+4]
+        lvxy[1]=hi[hi.index('P1')+2]
+        lvxy[2]=hi[hi.index('P1')+3]
+        return lvxy
+
+
+class X_serial (serial.Serial) :
+
+    def __init__(self):
+                pass
+    def x_SerialOpen(self,Port):
+        self.ser = serial.Serial(
+            port=Port,
+            baudrate=115200,
+            parity=serial.PARITY_NONE,
+            stopbits=serial.STOPBITS_ONE,
+            bytesize=serial.EIGHTBITS,
+            timeout=20)
+
+    def writePort(self, data): # 쓰기 함수
+        self.ser.write(data)
+    def writePortUnicode(self, data):  # 유니코드쓰기
+        self.writePort(data.encode())
+    def read(self, size=10, timeout=1):  # 사이즈 1 읽어오기
+        self.ser.timeout = timeout
+        readed = self.ser.readlines()
+        return readed
+    def readUntilExitCode(self, exitcode=b'\x03'):  # 특정코드가 올때까지 실행
+        readed = b''
+        while True:
+            data = self.read()
+            print(data)
+            readed += data
+            if exitcode in data:
+                return readed[:1]
+
+    def X_Temp(self):  # PMIC 온도 확인 절차 16진수로 읽은 값에 *0.0625
+        res = b''
+        self.writePortUnicode("TEMP?\n")
+        res = self.ser.readline()
+        txt12 = res.decode()[:len(res) - 1]
+        temp1=int(txt12[5:11],16)*.0625
+        temp2=int(txt12[12:18],16)*.0625
+        temp="(L:"+str(temp1)+"℃,R:"+str(temp2)+"℃)"
+        print(temp)
+        return temp
+
+    def getvalue(self, command):
+        self.writePortUnicode(command)
+        self.res = b''
+        self.res = self.ser.readline()
+        return self.res
+
+    def serial_write_port(self, port, command):
+
+        self.serial_write(command)
+        sleep(0.25)
+
+
+
+    def serial_write(self, command):
+        res = b''
+        self.writePortUnicode(command)
+        res = self.res_check()
+        self.result = res.decode()[:len(res) - 1]
+        txt = "Panel 응답 : :" + str(self.result)
+        print(txt)
+
+    def res_check(self):  # Serial 통신 응답이 없을때 조치
+        res = self.ser.readline()
+        i = 0
+        while res == "":
+            res = self.ser.readline()
+            sleep(1)
+            i += 1
+            if i == 20:
+                show_msgbox("20초동안 반응 없습니다. 점검 및 재실행 하세요")
+                break
+        return res
+
+
+
+    def model_Check(self,port):
+
+        command = 'model?\n'
+        self.writePortUnicode(command)
+        sleep(0.5)
+        self.ser.timeout=3
+        res = self.ser.readlines()
+        self.txt = "Board ver:"+ str(res)
+        print(self.txt)
+        return self.txt
+
+
+if __name__ == "__main__":
+    app = QApplication(sys.argv)
+    #app.setStyle("Fusion")
+    ca410 = CA410Control()
+    tserial = X_serial()
+
+    myWindow = MyWindow()
+    myWindow.setWindowTitle("CA410 Measuring Program v0 - Innovation of QA")
+    myicon = QPixmap()
+    myicon.load('C:/QCA410/UI/erricon.png')
+    myWindow.setWindowIcon(QIcon(myicon))
+    myWindow.show()
+
+
+    W0 = WorkerThread.create_worker(0)
+    WorkerThread.start_worker(*W0, myWindow.cntcheck, None,_finished_func=lambda: print("Finished"))
+
+    app.exec_()
+
