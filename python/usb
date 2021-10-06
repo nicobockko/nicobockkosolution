@@ -1,0 +1,181 @@
+# 신규 Serial, usb port 찾고 Dataframe에 저장
+import serial.tools.list_ports as sp
+import re
+import usb.core
+import usb.util
+import pandas as pd
+import numpy as np
+import schedule
+import time
+from SubWindow import SubWindow           # Dialog 불러오기 창
+
+class xx ():
+
+    connected1 = []
+    usb_list_dev = []
+    cellid = []
+    xx_port = pd.DataFrame(columns=('serial', 'usb', "cellid"))
+
+    def __init__(self):
+        super().__init__()
+        self.cell_in = []
+
+    def find_serial(self):
+        # Birdge 연결 할 제품 찾아오기
+
+        text1 = "연결 Serial port를 찾고 있습니다. 잠시 기다리세요 "
+        print(text1)
+        self.textAppend(text1)
+        self.connected1 = list(np.array(self.xx_port['serial'].tolist()))
+
+        self.connected2 = self.connected1.copy()
+        list_serial = sp.comports()
+        pattern = r"Silicon"
+        # device 찾기
+        for port in list_serial:
+            if re.findall(pattern, port.manufacturer):
+                self.connected1.append(port.device)
+
+        self.setconnected1 = set(self.connected1)
+        self.setconnected2 = set(self.connected2)
+
+        self.new_serial_Connected = (self.setconnected1 - self.setconnected2)
+        # 신규 Serial check 할 것
+
+        if len(self.new_serial_Connected) == 1 :
+            text2 = "New Connected Com port: " + str(self.new_serial_Connected)
+            self.textAppend(text2)
+            print(text2)
+            return list(self.new_serial_Connected)
+
+        elif len(self.new_serial_Connected) > 1:
+            text3 = "xx Cable 한개씩 연결하시기 바랍니다. 추가 연결 Port" + str(self.new_serial_Connected)
+            self.textAppend(text3)
+            print(text3)
+
+        elif len(self.new_serial_Connected) == 0:
+
+            text4="신규 Serial Port 없습니다. 연결상태를 확인하세요"
+            self.textAppend(text4)
+            print(text4)
+
+        else :
+            text04=" 추가된 Port가 삭제되어 정확한 실행이 안됩니다. 처음부터 다시 하세요"
+            self.textAppend(text04)
+            print(text04)
+            self.xx_port = self.xx_port.drop([0, 6], 0)
+
+    def find_usb(self):
+        # ATA0 찾기
+
+        self.usb_list_dev = list(np.array(self.xx_port['usb'].tolist()))
+        self.old_device = self.usb_list_dev.copy()
+        self.device2 = usb.core.find(find_all=True, idVendor=0x04E8, idProduct=0x2001)
+        self.listDevice2 = list(self.device2)
+
+        # Device 순차적으로 연결하기
+        if self.device2 is None:
+            raise ValueError('Device not found')
+            text5 = "Debug Board OTG usb 연결 상태 확인 \n\n 장치 관리자에서 USB driver 설치도 확인 !\n"
+            self.textAppend(text5)
+            print(text5)
+
+        # loop through devices, printing vendor and product ids in decimal and hex, 엑스코 실행에서 필요한 명령임.
+
+        for i in range(len(self.listDevice2)):
+            self.dev = self.listDevice2[i]
+            self.dev.set_configuration()
+            print("usb %d 번째 설정 address: " % (i + 1) + str(self.dev.address) + '\n')
+            self.usb_list_dev.append(self.dev.address)
+
+            self.dev.reset()
+
+        self.setconnected1 = set(self.usb_list_dev)
+        self.setconnected2 = set(self.old_device)
+
+        self.new_usb_Connected = (self.setconnected1 - self.setconnected2)
+
+        if len(self.new_usb_Connected) == 1 :
+            text6 = "New Connected USB port: " + str(self.new_usb_Connected)
+            self.textAppend(text6)
+            print(text6)
+            return list(self.new_usb_Connected)
+
+        elif len(self.new_usb_Connected) > 1:
+            text7 = "xx Cable 한개씩 연결하시기 바랍니다. 추가 연결 Port" + str(self.new_usb_Connected)
+            self.textAppend(text7)
+            print(text7)
+
+        else:
+            self.new_usb_Connected = ["미연결"]
+            text8 = "신규 xx Download Cable 없습니다.\n보상값 Download는 되지 않습니다.\n장치관리자 확인하세요"
+            self.textAppend(text8)
+            print(text8)
+            return self.new_usb_Connected
+
+    def new_port(self,new_serial,new_usb):   # USB, Serial 받아와서 list로 받아오기
+
+        self.cellid = []
+
+        print(self.cell_in)
+
+        if new_serial and new_usb[0] != "미연결"  :
+            #cellidd = input("Cell ID를 입력하세요!! :", )
+            # cellidd=self.inputcell()
+            self.cell_in= self.Input_Cellinf()
+
+            print("리스트 개수"+str(len(self.cell_in)))
+            print(self.cell_in)
+
+           ## cell_in = cell_inf.setupUi_1()
+
+        elif new_serial and new_usb[0] == "미연결" :
+            print("연결 된 신규 장치가 없어 추가 할 수 없습니다.")
+
+        else :
+            cellidd = "미입력"
+
+        self.cellid.append(self.cell_in)
+        self.new_link = new_serial + new_usb + self.cellid
+        return self.new_link
+
+    def db_update(self,xx_port,new_link):
+        self.xx_port = self.xx_port.append(pd.Series(new_link, index=self.xx_port.columns), ignore_index=True)
+        print("신규 연결 Port정보\n",self.x_port)
+        txt10 = "신규 연결 Port정보\n"+ str(self.xx_port)
+        self.textAppend(txt10)
+        return self.xx_port
+
+    def X_connect(self):
+        a = self.find_serial()
+        b = self.find_usb()
+        if len(self.new_serial_Connected) == 1 & len(self.new_usb_Connected) == 1 :
+            c = self.new_port(a,b)                      # Cell Inf를 입력 받아 옴
+            self.f = self.db_update(self.xx_port,c)   # Cell Inf 반영
+            self.showDf(self.f)
+            return self.f
+        else :
+            pass
+
+    def textAppend(self,txt):
+        self.time1 = str(time.strftime('%X', time.localtime(time.time())))
+        self.txt1= self.time1+ "] " + txt
+
+def action_time(self,time):
+    # 특정 함수 정의
+    def timefix():
+        print("매일 또는 4시간마다 등 지정!")
+
+    schedule.every(30).minutes.do(printhello)  # 30분마다 실행
+    schedule.every().monday.at("00:10").do(printhello)  # 월요일 00:10분에 실행
+    schedule.every().day.at("10:30").do(job)  # 매일 10시30분에
+
+    # 실제 실행하게 하는 코드
+    while True:
+        schedule.run_pending()
+        time.sleep(1)
+
+if __name__ == '__main__':
+
+    e = xx()
+    f=e.X_connect()
