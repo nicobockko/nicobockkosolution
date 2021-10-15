@@ -1,16 +1,1816 @@
+//#include <iostream> 
+//using namespace std;
+
+
+/* A7[TST] 정수3개 합과 평균
+int main(void)
+
+{
+	int sum = 0;
+	int avg = 0;
+	int in[3];
+	for (int i = 0; i < 3; i++)
+	{
+		cin >> in[i];
+		sum += in[i];
+	}
+	cout << "sum = " << sum <<endl;
+	cout << "avg = " << sum/3;
+}
+*/
+
+
+/*[5225] A8: [TST] 차량 5부제
+
 #include <iostream>
 using namespace std;
-int main()
+
+int main(void)
+
 {
-	char irum[30];
-	cout << "이름 번화번호 불르세여 " << endl;
-	cin.getline(irum, sizeof(irum));
-	cout << "구매금액입력하세요" << endl;
-	int caltot, calpoint;
-	cin >> caltot;
-	calpoint = caltot * 0.01;
-	cout << irum << "님 ";
-	std::cout << "발생 포인트는 =" << calpoint << "점입니다 호호\ㅜ";
+	//
+	int n;
+	cin >> n;
+
+	int d;
+	cin >> d;
+
+	int r = 0;
+	if (n%10 == d || n % 10 == d+5)
+	{
+		r = 1;
+	 
+	}
+	cout << r;
+
+}
+*/
+
+
+//[5224] A9: [TST] 홀짝 맞추기
+/*
+int main(void)
+
+{
+
+	int n;
+	cin >> n;
+	int c = 0;
+	if (n % 2 == 1)
+	{
+		c = 1;
+	}
+
+	cout << c;
+
+	return 0;
+}
+
+
+*/
+//[5217] B0: [TST] 3또는 5의 배수 합과 평균
+/*
+#include <iostream> 
+using namespace std;
+int main(void)
+
+{
+	int a;
+	cin >> a;
+	int b;
+	cin >> b;
+	float sum=0;
+	float avg = 0;
+	int num = 0;
+	
+
+	for (int i = a; i < b + 1; i++)
+	{
+		if (i%3 == 0 ||  i % 5 == 0)
+		{
+			num++;
+			sum += i;
+		}
+
+
+	}
+	avg = sum / num;
+
+	cout << "sum : " << sum << endl;
+	cout.precision(1);
+	cout << fixed;
+	cout << "avg : " << avg;
+
+	return 0;
+}
+*/
+/*배수출력
+#include <iostream> 
+using namespace std;
+int main(void)
+
+{
+	int a;
+	cin >> a;
+	float sum = 0;
+	float avg = 0;
+	int num = 0;
+	for (int i =1; i <11; i++)
+	{
+	 
+		cout <<a*i << " ";
+
+	}
+
+}
+*/
+
+
+/*
+//
+#include <iostream> 
+using namespace std;
+int main(void)
+
+{
+	int n;
+	cin >> n;
+	int sum = 0;
+	float avg = 0;
+	int num = 0;
+	for (int i = 1; i < n+1; i++)
+	{
+		if (i % 2 == 1)
+		{
+			sum += i;
+		}
+
+	}
+	cout << sum;
+}
+*/
+
+/*
+#include <iostream> 
+using namespace std;
+int main(void)
+
+{
+
+	for (int i = 1; i < 10; i++)
+	{
+		
+		for (int j = 1; j < i+1; j++)
+		{
+			cout << j;
+
+		}
+		cout << endl;
+	}
+}
+*/
+
+/*
+#include <iostream> 
+using namespace std;
+int main(void)
+
+{
+	int a;
+	int days[12] = { 31,28,31,30,31,30,31,31,30,31,30,31 };
+
+	cin >> a;
+	cout << days[a - 1];
+}
+
+
+
+*/
+
+/*
+#include <iostream> 
+using namespace std;
+int main(void)
+
+{
+	int a;
+	cin >> a;
+	int b;
+	cin >> b;
 
 	
+	for (int i = 1; i < a + 1; i++)
+	{
+		
+		for (int j = 1; j < b + 1; j++)
+		{
+			cout << j*i << " ";
+		}
+		cout << endl;
+
+	}
 }
+
+
+*/
+/*
+
+#include <iostream> 
+using namespace std;
+int main(void)
+
+{
+	for (int i = 1; i<7; i++)
+	{
+		for (int j = 1; j < 7; j++)
+		{
+			for (int k = 1; k < 7; k++)
+			{
+
+				cout << i << " " << j << " " << k << endl;
+
+			}
+		}
+	}
+}
+
+*/
+/*
+#include <iostream> 
+using namespace std;
+int main(void)
+
+{
+	int a, b, c, d;
+
+	cin >> a >> b;
+	cin >> c >> d;
+
+	if (a > c && b > d)
+	{
+		cout << 1;
+	}
+	else
+	{
+		cout << 0;
+	}
+}
+
+*/
+
+
+/*
+ 2021-09-16 09:22
+
+#include <iostream>
+using namespace std;
+int main(void)
+
+{
+	int arry[100];
+	int val=0;
+	int num = 0;
+	while (val != 999)
+	{
+		cin >> val;
+		arry[num]=val;
+		num++;
+	}
+	num--;
+
+	int max = arry[0];
+	int min = arry[0];
+	for (int i = 0; i < num; i++)
+	{
+		if (arry[i] > max)
+		{
+			max = arry[i];
+		}
+
+		if (arry[i] < min)
+		{
+			min = arry[i];
+		}
+	}
+
+	cout << "max : " << max << endl;
+
+	cout << "min : "<<min << endl;
+}
+
+
+
+
+#include <iostream> 
+using namespace std;
+int main(void)
+
+{
+
+	int val=0;
+	int max =-999;
+	int min = 999;
+	cin >> val;
+	while (val != 999)
+	{
+	
+		if (val > max)	max = val;
+		if (val < min)  min = val;
+		cin >> val;
+	}
+
+	cout << "max : " << max << endl<< "min : "<<min << endl;
+}
+
+*/
+
+/*
+#include <iostream> 
+using namespace std;
+int main(void)
+
+{
+
+	int n;
+	cin >> n;
+	int mul=1;
+	int sum=0;
+	for (int i = 1; i < n + 1; i++)
+	{
+		for (int j = 1; j < i+1; j++)
+		{
+			mul *= j;
+		}
+		sum += mul;
+		mul = 1;
+	}
+	
+	printf("%d", sum);
+}
+*/
+/*
+//c0 케이크자르기 
+#include <iostream> 
+using namespace std;
+int main(void)
+
+{
+	int a, b;
+	cin >> a >> b;
+
+	if (a > b) // a숫자가 더 클경우 대비해서 걍 처리해줌 ;
+	{
+		int n = a;
+		a = b;
+		b = n;
+	}
+
+	int c, d;
+	cin >> c >> d;
+
+
+	if (c > a && c < b) //c가 ab구간에 들어오고 
+	{
+		if (d > a && d < b) printf("not cross");  //d도 ab구간에 들어오면 낫 크로스 
+		else printf("cross");
+	}
+
+	else //c가 구간에 안들어오고 
+	{
+		if (d > a && d < b) printf("cross");  //d가 구간에 들어오면 크로스 
+		else printf("not cross");
+	}
+}
+*/
+/*
+
+//문제 [1702] C1: [TST]찢어진 책
+
+#include <iostream> 
+using namespace std;
+int main(void)
+
+{
+	int a, b;
+	cin >> a >> b;
+
+	if (a > b) // a숫자가 더 클경우 대비해서 걍 처리해줌 ;
+	{
+		int n = a;
+		a = b;
+		b = n;
+	}
+
+	int c, d;
+	cin >> c >> d;
+
+
+	if (c > a && c < b) //c가 ab구간에 들어오고 
+	{
+		if (d > a && d < b) printf("not cross");  //d도 ab구간에 들어오면 낫 크로스 
+		else printf("cross");
+	}
+
+	else //c가 구간에 안들어오고 
+	{
+		if (d > a && d < b) printf("cross");  //d가 구간에 들어오면 크로스 
+		else printf("not cross");
+	}
+}
+*/
+/*
+#define min(A,B) (A<B? A : B)
+#define max(A,B) (A>B? A : B)
+
+#include <stdio.h> 
+#include <iostream> 
+using namespace std;
+
+int main(void)
+{
+	int a1, b1, a2, b2;
+
+	cin >> a1 >> b1;
+	cin >> a2 >> b2;
+	//scanf("%d %d", &a1, &b1);
+	//scanf("%d %d", &a2, &b2);
+
+	if (min(a1, b1) > max(a2, b2) || max(a1, b1) < min(a2, b2) || (min(a1, b1) - min(a2, b2)) * (max(a1, b1) - max(a2, b2)) < 0) printf("not cross");
+
+	else printf("cross");
+
+	return 0;
+
+}
+
+*/
+
+
+/*
+#include <iostream> 
+using namespace std;
+
+int main(void)
+{
+	int N;
+	int Sum;
+	cin >> N >> Sum;
+
+	int a = 0;
+	for (int i = 1; i < N + 1; i++)
+	{
+		a += i;
+	}
+
+	int s = a - Sum; //  홀수여야만한다 && 구한 쪽수는 책장*2보다  작아야한다 %% 최종구한 쪽수는 홀수여야한다
+	if (s % 2 == 1 && s < N*2 && (s / 2) % 2 == 1)cout << s / 2 << " " << s / 2 + 1;
+	else cout << "Error";
+
+}
+*/
+
+
+
+
+	//배열에 변수 넣으려면 진짜 성가시네 const int를 써야한다네... 
+	// 근데 그나마 const int k = n; 이것도안되네;;ㅋㅋ
+	//배열에 중복이있는지 하나씩 체크하는방법이랑 
+	//1 부터 100까지 player 값을 하나씩 빼가는방법 ...흠,,
+/*
+#include <iostream> 
+using namespace std;
+
+int main(void)
+{
+	int n;
+	int g[3][200];
+	int score[200] = { 0 };
+
+	cin >> n;
+
+	for (int i = 0; i < n; i++)	cin >> g[0][i] >> g[1][i] >> g[2][i];  //변수에 값들 채우기 
+
+
+	for (int i = 0; i < 3; i++) //게임별로 스코어 계산할꺼임 
+	{
+		for (int j = 0; j < n; j++) //j번 플레이어 등장 
+		{
+			int a = 0;
+			for (int k = 0; k < n; k++) if (g[i][j] == g[i][k])	a++; //중복이 몇번일어났는지 체크 
+			if(a==1) score[j] += g[i][j];
+		}
+	}
+
+	for (int i = 0; i < n; i++)	cout << score[i] << endl;
+
+	return 0;
+
+}
+*/
+/*
+#include <stdio.h>
+//증프로님꺼 
+int main(void) {
+	int a[101][3];//
+	int b[200][3];//
+	int i, j, now, N, sum;
+	scanf("%d", &N);
+
+
+	int a[101][3] = { 0 };
+
+
+	for (i = 0; i < N; i++) {
+		for (j = 0; j < 3; j++) {
+			scanf("%d", &now);
+			b[i][j] = now;
+			a[now][j]++; //해당숫자가 몇번나왔는지 카운트 
+		}
+	}
+
+	for (i = 0; i < N; i++) {
+		sum = 0;
+		for (j = 0; j < 3; j++) {
+			if (a[b[i][j]][j] == 1)    sum += b[i][j];
+		}
+		printf("%d\n", sum);
+	}
+}
+
+*/
+
+/*
+
+#include <iostream>
+using namespace std;
+
+int pow(int a, int b)
+{
+	int val = 1;
+		for (int i = 0; i < b; i++)
+			{
+			val *= a;
+			}
+	return val;
+}
+
+
+int main()
+{
+	char S[30];
+	long long int Sa[19], Sb[19];
+	int X;
+	int getlen = 0;
+
+	cin >> S >> X;
+
+	for (int i = 0; i < sizeof(S); i++) //입력 받은 글자 수 측정!
+	{
+		if (S[i] == NULL)
+		{
+			getlen = i;
+			break;
+		}
+	}
+
+	for (int i = 1; i < getlen; i++) //5라면,,,
+	{
+		long long int a = 0, b = 0;
+		for (int j = 0; j < i; j++)
+		{
+			Sa[j] = (int)S[j] - (int)'0';
+			a += Sa[j] * pow(10, i - j - 1);
+		}
+
+		for (int j = 0; j < getlen - i; j++)
+		{
+			Sb[j] = (int)S[j + i] - (int)'0';
+			b += Sb[j] * pow(10, getlen - i - j - 1);
+		}
+
+		if (a + b == X)
+		{
+			cout << a << '+' << b << '=' << X;
+			return 0;
+		}
+	}
+	cout << "NONE";
+	return 0;
+
+
+}
+*/
+/*
+
+#include <iostream>
+using namespace std;
+
+int main(void)
+{
+	int val, idx;
+	int max = 0;
+	for (int i = 0; i < 9; i++)
+	{
+		cin >> val;
+		if (max < val) //옆에값이 더 크면 옆에값으로 업데이트 
+		{
+			max = val;
+			idx = i;
+		}
+	}
+	cout << max << endl;
+	cout << idx + 1;
+}
+*/
+
+
+/*
+#include <iostream>
+using namespace std;
+
+int flip(int a)
+{
+	if (a == 1) return 3;
+	if (a == 3) return 1;
+	if (a == 2) return 4;
+	if (a == 4) return 2;
+	else return 0;
+}
+
+int main(void)
+{
+	int len; // 수열 숫자 몇개인지 
+	cin >> len;
+	
+	int arr[60];   //담아제껴
+	for (int i = 0; i < len; i++) cin >> arr[i];
+
+	int same[60][55];  // 모든경우의수 담아버리기 
+	for (int i = 0; i < len; i++) for (int j = 0; j < len; j++)same[j][i] = arr[(i + j) % len];
+	int same_flip[60][55]; // 모든경우의수 담아버리기_flip
+	for (int i = 0; i < len; i++) for (int j = 0; j < len; j++)same_flip[len-j-1][i] = flip(same[j][i]);
+
+
+	//잘 담겼는지 보기 다각형수열
+	for (int i = 0; i < len; i++)
+	{
+		for (int j = 0; j < len; j++) cout << same[j][i];
+		cout << endl;
+	}
+	cout << endl;
+
+	for (int i = 0; i < len; i++)
+	{
+		for (int j = 0; j < len; j++) cout << same_flip[j][i];
+		cout << endl;
+	}
+
+	cout << endl;
+	
+
+
+
+	int num; //비교대상 몇셋트인지 
+	cin >> num;	
+	
+	int getsame[60][110];
+	int b = 0;
+
+
+	int a = 0;
+
+
+	for (int i = 0; i < num; i++) //비교대상 몇셋트 
+	{
+		for (int j = 0; j < len; j++) cin >> getsame[j][i];   //  비교해야할 대상들 담기
+
+		for (int j = 0; j < len; j++) //레퍼런스 셋트들과 비교 
+			{
+				a = 0;
+				for (int k = 0; k < len; k++)	if (getsame[k][i] == same[k][j]) a++;
+				b += a / len;
+
+				a = 0;
+				for (int k = 0; k < len; k++) if (getsame[k][i] == same_flip[k][j]) a++;
+				b += a / len;
+			}
+	}
+
+	cout << b << endl;
+
+	for (int i = 0; i < num; i++)
+	{
+		for (int j = 0; j < len; j++)
+		{
+			a = 0;
+			for (int k = 0; k < len; k++) if (getsame[k][i] == same[k][j]) a++;
+			if (a == len)
+			{
+				for (int k = 0; k < len; k++) cout << getsame[k][i] << ' ';
+				cout << endl;
+				break;
+			}
+
+			a = 0;
+			for (int k = 0; k < len; k++) if (getsame[k][i] == same_flip[k][j]) a++;
+			if (a == len)
+			{
+				for (int k = 0; k < len; k++) cout << getsame[k][i] << ' ';
+				cout << endl;
+				break;
+			}
+		}
+	}
+
+
+	return 0;
+}
+*/
+
+
+/*
+#include <iostream>
+using namespace std;
+
+int main(void)
+{
+
+	int n;
+	cin >> n;
+	
+	char arry[110][110];
+	char a = 'A';
+
+	for (int i = n-1; i > -1; i--)
+	{
+		for (int j = n - 1; j > -1; j--)
+		{
+			arry[i][j] = a++;
+			if (a == 'Z' + 1) a = 'A';
+		}
+	
+	}
+
+	for (int i = 0; i < n; i++)
+	{
+		for (int j = 0; j < n; j++) cout << arry[j][i]<<' ';
+
+		cout << endl;
+	}
+
+	return 0;
+}
+
+*/
+/*
+
+#include <iostream>
+using namespace std;
+
+int main(void)
+{
+	int R, C, A, B;
+	cin >> R >> C >> A >> B;
+
+
+	for (int row = 0; row < R; row++)
+	{
+		for (int y = 0; y < A; y++)
+		{
+
+			for (int col = 0; col < C; col++)
+			{
+
+				for (int x = 0; x < B; x++)
+				{
+					if (((col % 2) + (row % 2)) % 2 == 0) cout << 'X';
+					else cout << '.';
+				}
+			}
+			cout << endl;
+		}
+	}
+	return 0;
+}
+*/
+
+
+
+
+
+/*
+#include <iostream>
+using namespace std;
+
+int main(void)
+{
+
+	int N;
+	cin >> N;
+
+	int space[100][100] = { 0 };
+
+	int a, b;
+	int sum = 0;
+
+	for (int i = 0; i < N; i++)
+	{
+		cin >> a >> b;
+		for (int i = a; i < a+10; i++)
+		{
+			for (int j = b; j < b+10; j++) space[i][j] = 1;
+		}
+	}
+
+
+	for (int i = 0; i < 100; i++)
+	{
+		for (int j = 0; j < 100; j++) sum += space[i][j];
+	}
+	
+
+
+	cout << sum;
+	
+	return 0;
+}
+*/
+
+
+/*
+#include <iostream>
+using namespace std;
+ 
+int main(void)
+{
+
+	int n;
+	cin >> n;
+
+	char from[60];
+	char to[60];
+	for (int i = 0; i < n; i++) cin >> from[i] >> to[i];
+
+	int m;
+	cin >> m;
+
+	char arry[100010];
+	for (int i = 0; i < m; i++) cin >> arry[i];
+
+
+	for (int i = 0; i < m; i++)
+	{
+		for (int j = 0; j < n; j++)
+		{
+			if (arry[i] == from[j])
+			{
+				arry[i] = to[j];
+				break;
+			}
+		}
+		cout << arry[i];
+	}
+
+		return 0;
+}
+*/
+
+
+//#define min(A,B) (((A)<(B))? (A) : (B))
+//#define max(A,B) (((A)>(B))? (A) : (B))
+
+/*
+int i = 0;
+while (str[i] != NULL) {
+	i++;
+}
+*/
+
+/*
+#define min(A,B) (((A)<(B))? (A) : (B))
+#define max(A,B) (((A)>(B))? (A) : (B))
+#include <iostream>
+using namespace std;
+
+int main(void)
+{
+	double a;
+	cin >> a;
+	int aa = 0;
+	double aaa = a;
+
+
+	while (a / 10 > 0.9)
+	{
+		a /= 10;
+		aa++;
+	}
+
+	char c;
+	cin >> c;
+
+	double b;
+	cin >> b;
+
+	int bb = 0;
+	double bbb = b;
+
+	while (b / 10 > 0.9)
+	{
+		b /= 10;
+		bb++;
+	}
+
+	if (c == '+')
+	{
+		if (aaa == bbb)
+		{
+			cout << '2';
+			for (int i = 0; i < max(aa, bb); i++) cout << '0';
+		}
+
+		else if (aaa + bbb > 100000)
+		{
+			cout << '1';
+			for (int i = 0; i < max(aa, bb) - min(aa, bb) - 1; i++) cout << '0';
+			cout << '1';
+			for (int i = 0; i < min(aa, bb); i++) cout << '0';
+		}
+		else cout << aaa + bbb;
+	}
+
+
+
+	if (c == '*')
+	{
+		if (aaa * bbb > 100000)
+		{
+			cout << '1';
+			for (int i = 0; i < aa + bb; i++) cout << '0';
+		}
+		else cout << aaa * bbb;
+	}
+
+
+	return 0;
+}
+
+*/
+
+
+/*
+#include <iostream>
+using namespace std;
+
+
+
+int pow(int a, int b)
+{
+	int val = 1;
+	for (int i = 0; i < b; i++) val *= a;
+	return val;
+}
+
+
+
+int main(void)
+{
+
+
+	char soosik[20] = { 'z' };
+	int num_a=0, num_b=0, num_c=0;
+	char operator1, operator2;
+	int stop;
+	int zero =0;
+	int len;
+
+	cin.getline(soosik, sizeof(soosik));
+	for (int i = 0; i < sizeof(soosik); i++) //입력 받은 글자 수 측정!
+	{
+		if (soosik[i] == NULL)
+		{
+			len = i;
+			break;
+		}
+	}
+
+
+	for (int i = len-1; i > -1; i--)
+	{
+		if ((int)soosik[i] - (int)'0' < 0) break;
+		if ((int)soosik[i] - (int)'0' < 10)
+		{
+			num_c += ((int)soosik[i] - (int)'0')  * pow(10, zero);
+			stop = i;
+			zero++;
+		}
+	}
+
+	zero = 0;
+	operator2 = soosik[stop-1];
+
+	for (int i = stop - 2 ; i > -1; i--)
+	{
+		if ((int)soosik[i] - (int)'0' < 0) break;
+		if ((int)soosik[i] - (int)'0' < 10)
+		{
+			num_b += ((int)soosik[i] - (int)'0') * pow(10, zero);
+			stop = i;
+			zero++;
+		}
+	}
+
+	zero = 0;
+	operator1 = soosik[stop-1];
+
+	for (int i = stop - 2; i > -1; i--)
+	{
+		if ((int)soosik[i] - (int)'0' < 10)
+		{
+			num_a += ((int)soosik[i] - (int)'0')  * pow(10, zero);
+			zero++;
+		}
+	}
+
+	int result = 0;
+
+	if(operator1=='*')
+	{
+		result += num_a * num_b;
+		if (operator2 == '+') result += num_c;
+		if (operator2 == '-') result -= num_c;
+		if (operator2 == '*') result *= num_c;
+		if (operator2 == '/') result /= num_c;
+		if (operator2 == '%') result %= num_c;
+		cout << result;
+		return 0;
+	}
+		
+	else if (operator1 == '/')
+	{
+		result += num_a / num_b;
+		if (operator2 == '+') result += num_c;
+		if (operator2 == '-') result -= num_c;
+		if (operator2 == '*') result *= num_c;
+		if (operator2 == '/') result /= num_c;
+		if (operator2 == '%') result %= num_c;
+		cout << result;
+		return 0;
+	}
+
+	else if (operator1 == '%')
+	{
+		result += num_a % num_b;
+		if (operator2 == '+') result += num_c;
+		if (operator2 == '-') result -= num_c;
+		if (operator2 == '*') result *= num_c;
+		if (operator2 == '/') result /= num_c;
+		if (operator2 == '%') result %= num_c;
+		cout << result;
+		return 0;
+	}
+
+	else if (operator2 == '*')
+	{
+		result += num_b * num_c;
+		if (operator1 == '+') result += num_a;
+		if (operator1 == '-') result = num_a - result;
+		if (operator1 == '*') result *= num_a;
+		if (operator1 == '/') result /= num_a;
+		if (operator1 == '%') result %= num_a;
+		cout << result;
+		return 0;
+	}
+
+	else if (operator2 == '/')
+	{
+		result += num_b * num_c;
+		if (operator1 == '+') result += num_a;
+		if (operator1 == '-') result = num_a-result;
+		if (operator1 == '*') result *= num_a;
+		if (operator1 == '/') result /= num_a;
+		if (operator1 == '%') result %= num_a;
+		cout << result;
+		return 0;
+	}
+
+	else if (operator2 == '%')
+	{
+		result += num_b * num_c;
+		if (operator1 == '+') result += num_a;
+		if (operator1 == '-') result = num_a - result;
+		if (operator1 == '*') result *= num_a;
+		if (operator1 == '/') result /= num_a;
+		if (operator1 == '%') result %= num_a;
+		cout << result;
+		return 0;
+	}
+
+	//cout << operator1 << operator2 << endl;
+	if (operator1 == '+' && operator2 == '+') cout << num_a + num_b + num_c;
+	if (operator1 == '+' && operator2 == '-') cout << num_a + num_b - num_c;
+	if (operator1 == '-' && operator2 == '+') cout << num_a - num_b + num_c;
+	if (operator1 == '-' && operator2 == '-') cout << num_a - num_b - num_c;
+	//와진짜 첫번째 수에 음수 나오면 어떻게하냐 ? 정수?정수? 정수는 음수도되는거아닌가  아돌겟네 
+	return 0;
+}
+
+
+*/
+
+
+
+/*
+#define _CRT_SECURE_NO_WARNINGS
+
+
+#include <stdio.h>
+
+int Input_Data(void)
+{
+	int i, n, ret = 0;
+	for (i = 0; i < 4; i++)
+	{
+		scanf("%d", &n);
+		ret = ret * 10 + n;
+	}
+	return ret;
+}
+
+
+int Get_Clock_Num(int num)
+{
+	int i;
+	int min = num;
+	for (i = 0; i < 3; i++)
+	{
+		num = (num % 1000 * 10) + (num / 1000);
+		if (min > num) min = num;
+	}
+	return min;
+}
+
+
+int Get_Num(int* n)
+{
+	return n[0] * 1000 + n[1] * 100 + n[2] * 10 + n[3];
+}
+
+void Next(int* n)
+{
+	int i = 3;
+	n[i]++;
+	while (i > 0)
+	{
+		if (n[i] == 10)
+		{
+			n[i] = 1;
+			n[i - 1]++;
+		}
+		else break;
+		i--;
+	}
+}
+
+int Get_Solution(int clock_num)
+{
+	int cnt = 0;
+	int num;
+	int n[4] = { 1,1,1,1 };
+	for (; clock_num >= (num = Get_Num(n)); Next(n))
+	{
+		if (num == Get_Clock_Num(num)) cnt++;
+	}
+	return cnt;
+}
+
+int main(void)
+{
+	int num = Input_Data();
+
+	int clock_num = Get_Clock_Num(num);
+
+	printf("%d\n", Get_Solution(clock_num));
+
+	return 0;
+}
+
+
+*/
+/*
+
+#define _CRT_SECURE_NO_WARNINGS
+#include <iostream>
+#include <stdlib.h>
+
+using namespace std;
+
+#define MAX_N (5000)
+
+int N;
+int num[MAX_N + 10];
+
+void Input_Data(void) {
+
+	scanf("%d", &N);
+	
+	int i;
+	for (i = 0; i < N; i++) {
+		scanf("%d", &num[i]);
+	}
+}
+
+
+int comp(const void* p1, const void* p2)
+{
+	int* pp1 = (int*)p1;
+	int* pp2 = (int*)p2;
+
+	if (*pp1 < *pp2) return -1;
+	else if (*pp1 > *pp2) return 1;
+	else return 0;
+	//p1 우선순위 높으면 양수, 낮으면 음수 같으면 0  const는뭐지 
+}
+
+int Sol()
+{
+	int sum = 0;
+	int buf = 0;
+
+	for (int i = 0; i < N-1; i++)
+	{
+		qsort(num, N, sizeof(num[0]), comp);
+		buf = num[i]+ num[i+1];
+		num[i] = buf;
+		num[i+1] = 0;
+		sum = sum + buf;
+
+
+	}
+	return sum;
+}
+
+
+
+
+int main(void) {
+	Input_Data();
+
+	//qsort(정렬할 데이터 시작주소, 정렬할 데이터 요소 수,정렬할 요소 사이즈 수, 비교하는방법 함수 주소)
+
+	cout << Sol();
+	//printf("%d", Sol());
+
+	return 0;
+}
+*/
+/*
+#define _CRT_SECURE_NO_WARNINGS
+#include <iostream>
+#include <stdlib.h>
+
+#include <math.h>
+using namespace std;
+
+
+int N,M;
+
+void Input_Data(void) {
+
+	scanf("%d %d", &N,&M);
+
+}
+
+
+
+int Sol()
+{
+	int q=1, w=0;
+
+	for (int i = N; i <= M; i++)
+	{
+		int a = sqrt(i);
+		if (a*a == i)
+		{
+			q = a;
+			break;
+		}
+	}
+
+	for (int i = M; i >= N; i--)
+	{
+		int a = sqrt(i);
+		if (a*a == i)
+		{
+			w = a;
+			break;
+		}
+	}
+
+	return M-N-(w-q);
+}
+
+
+
+
+int main(void) {
+	Input_Data();
+
+
+	cout << Sol();
+
+	return 0;
+}
+
+
+
+
+*/
+
+/*
+
+#define _CRT_SECURE_NO_WARNINGS
+#include <iostream>
+#include <stdlib.h>
+
+using namespace std;
+
+
+int N, M;
+
+void Input_Data(void) {
+
+	scanf("%d %d", &N, &M);
+	if (M > N)
+	{
+		int temp = M;
+		M = N;
+		N = temp;
+	}
+
+}
+
+int uclid(int a ,int b) {
+	if (b== 0)
+		return a;
+	
+	else
+		return uclid(b, a%b);
+}
+
+int Sol()
+{
+	cout << uclid(N, M) << endl << N * M / uclid(N, M);
+
+	return 0;
+
+}
+
+
+
+
+int main(void) {
+	Input_Data();
+
+	Sol();
+
+	return 0;
+}
+
+
+*/
+/*
+
+#define _CRT_SECURE_NO_WARNINGS
+#include <stdlib.h>
+#include <iostream>
+
+using namespace std;
+int num[4];
+int fore_num = 0;
+
+
+int compup(const void* p1, const void* p2) {
+
+	int* pp1 = (int*)p1;
+	int* pp2 = (int*)p2;
+	if (*pp1 < *pp2) return -1;
+	else if (*pp1 > * pp2) return 1;
+	else return 0;
+}
+
+void Input_Data(void) {
+
+	for (int i = 0; i < 4; i++)	scanf("%1d", &num[i]);
+	for (int i = 0; i <= 3; i++) fore_num = fore_num * 10 + num[i];
+
+}
+
+int Sol(void)
+{
+	int times = 0;
+
+	while (fore_num != 6174)
+	{
+		for (int i = 0; i <= 3; i++)
+		{
+			num[i] = fore_num % 10;
+			fore_num /= 10;
+		}
+
+		qsort(num, 4, sizeof(num[0]), compup);
+		int max = 0, min = 0;
+		for (int i = 0; i <= 3; i++) min = min * 10 + num[i];
+		for (int i = 3; i >= 0; i--) max = max * 10 + num[i];
+
+
+		fore_num = max - min;
+		times++;
+	}
+	return times;
+
+}
+
+
+
+int main()
+{
+	Input_Data();
+	printf("%d",Sol());
+	return 0;
+}
+
+*/
+
+/*
+//[1718] G6	[TST]합의 회문수
+
+#define _CRT_SECURE_NO_WARNINGS
+#include <stdlib.h>
+#include <iostream>
+
+using namespace std;
+int N;
+char num[8];
+int getlen;
+
+
+void Input_Data(void) {
+	scanf("%d", &N);
+
+	for (int i = 0; i < N; i++)
+	{
+		scanf("%s", &num);
+		for (int j = 0; j < 8; j++)
+		{
+			if (num[j] == NULL)
+			{
+				getlen = j;
+				break;
+			}
+		}
+		for (int j = 0; j < getlen; j++)
+		{
+			if (num[j] + num[getlen - j-1] - 2 * '0' > 9)
+			{
+				printf("NO\n");
+				break;
+			}
+			if (j == getlen-1) printf("YES\n");
+
+		}
+
+	}
+}
+
+
+int Sol(void)
+
+{
+	return 0;
+
+}
+
+
+
+int main()
+{
+	Input_Data();
+	return 0;
+}
+
+*/
+
+/*
+//[1718] G6[TST]합의 회문수
+#define _CRT_SECURE_NO_WARNINGS
+#include <stdlib.h>
+#include <iostream>
+#include <algorithm>
+#include <string.h>
+using namespace std;
+int N;
+char num[10];
+int getlen;
+
+
+void Input_Data(void) {
+	scanf("%d", &N);
+
+	for (int i = 0; i < N; i++)
+	{
+		scanf("%s", num);
+		getlen = strlen(num);
+
+		string str1 = num;
+		string str2 = num;
+		reverse(str2.begin(), str2.end());
+
+		string result = to_string(stoi(str1) + stoi(str2));
+		int bound = result.length();
+
+		for (int i = 0; i < bound; i++)
+		{
+			if (result[i] != result[bound - i - 1])
+			{
+
+				printf("NO\n");
+				break;
+			}
+			if (i == bound  - 1) printf("YES\n");
+		}
+	}
+}
+
+int main()
+{
+	Input_Data();
+	return 0;
+}
+
+
+*/
+
+/*
+// [1713] G8: [TST]가장 가까운 짝수인 7의 배수
+
+#define _CRT_SECURE_NO_WARNINGS
+#include <stdlib.h>
+#include <iostream>
+
+using namespace std;
+int N;
+
+
+
+void Input_Data(void) {
+	scanf("%d", &N);
+
+}
+
+
+int Sol(void)
+
+{
+	int a;
+	for (int i = N - 7; i < N + 14; i++)
+	{
+		
+
+		if ((i>13) &(i % 2 == 0) & (i % 7 == 0))
+		{
+			a = i;
+			break;
+		}
+
+	}
+
+	return a;
+
+}
+
+
+
+int main()
+{
+	Input_Data();
+	printf("%d", Sol());
+	return 0;
+}
+*/
+/*
+//[1714] G9: [TST]가장 가까운 실수와 가장 먼 실수
+
+#define _CRT_SECURE_NO_WARNINGS
+#include <stdlib.h>
+#include <iostream>
+#include <math.h>
+
+using namespace std;
+float N[5];
+
+
+
+void Input_Data(void) {
+	for (int i = 0; i < 5; i++)	scanf("%f", &N[i]);
+	//for (int i = 0; i < 5; i++)	printf("%f", N[i]);
+
+}
+
+float sol[2] = { 999 };
+int Sol(void)
+
+{
+	
+	float max = -9999;
+	float min = 9999;
+	for (int i = 0; i < 5; i++)
+	{
+		if (abs(N[i] - 3.5) < min)
+		{
+			min = abs(N[i] - 3.5);
+			sol[0] = N[i];
+		}
+		else if (abs(N[i] - 3.5) == min & N[i] < sol[0]) sol[0] = N[i];
+
+		if (abs(N[i] - 3.5) > max)
+		{
+			max = abs(N[i] - 3.5);
+			sol[1] = N[i];
+		}
+		else if (abs(N[i] - 3.5) == max & N[i] < sol[1]) sol[1] = N[i];
+		
+
+	}
+	return 0;
+}
+
+
+
+int main()
+{
+	Input_Data();
+	Sol();
+	printf("%f %f", sol[0],sol[1]);
+	return 0;
+}
+
+*/
+/*
+//[1713] G8	[TST]가장 가까운 짝수인 7의 배수
+#define _CRT_SECURE_NO_WARNINGS
+#include <stdlib.h>
+#include <iostream>
+
+using namespace std;
+int N;
+
+
+
+void Input_Data(void) {
+	scanf("%d", &N);
+
+}
+
+
+int Sol(void)
+
+{
+	int a;
+	for (int i = N - 7; i < N + 14; i++)
+	{
+
+
+		if ((i > 13) &(i % 2 == 0) & (i % 7 == 0))
+		{
+			a = i;
+			break;
+		}
+
+	}
+
+	return a;
+
+}
+
+
+
+int main()
+{
+	Input_Data();
+	printf("%d", Sol());
+	return 0;
+}
+
+*/
+/*
+//[1715] H0	[TST]공배수의개수
+#define _CRT_SECURE_NO_WARNINGS
+
+#include <iostream>
+
+
+using namespace std;
+int a[10] = { 12, 18, 21, 36, 15, 19, 22, 24, 31, 55 };
+int x,y;
+int gonbae;
+
+int uclid(int a, int b) {
+	if (b == 0)
+		return a;
+	else
+		return uclid(b, a%b);
+}
+
+
+void Input_Data(void) {
+	scanf("%d %d", &x,&y);
+	gonbae = x * y / uclid(x, y);
+
+}
+
+
+int Sol(void) {
+	int sum = 0;
+	int p,i;
+	for (i = 0; i < 10; i++)
+	{
+		p = 1;
+		while (gonbae*p < 56)
+		{
+			if (a[i] == gonbae*p)
+			{
+				sum++;
+				break;
+			}
+				p++;
+		}
+	}
+	return sum;
+}
+
+
+
+int main()
+{
+	Input_Data();
+	printf("%d", Sol());
+	return 0;
+}
+
+*/
+
+
+// [1717] H1: [TST]숫자의 종류
+#define _CRT_SECURE_NO_WARNINGS
+
+#include <iostream>
+
+
+using namespace std;
+
+int N;
+int nums[1010];
+
+void Input_Data(void) {
+	scanf("%d", &N);
+	for (int i = 0; i < N; i++) scanf("%d", &nums[i]);
+}
+
+
+int Sol(void) {
+
+
+	int count = 0;
+	for (int i = 0; i < N; i++)
+	{
+		int flag = 0;
+		for (int j = 0; j < N; j++)
+		{
+			if (i != j & nums[i]!=-1) {
+				if (nums[i] == nums[j])
+				{
+					nums[j] = -1;
+					flag = 1;
+				}
+			}
+		}
+		if (flag==1) count++;
+	}
+	return (N-count);
+}
+
+
+
+int main()
+{
+	Input_Data();
+	printf("%d", Sol());
+	return 0;
+}
+
+
+
+
+
+
