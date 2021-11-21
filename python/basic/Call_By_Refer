@@ -1,0 +1,20 @@
+
+"""
+# call by value
+
+def fn1(p):
+    p = p + 10
+    print("inside :: ", p)
+p = 100
+fn1(p)
+print("outside :: ", p)
+"""
+
+# call by referene
+def fn2(p):
+    p[0] = p[0] + 10
+    print("inside :: ", p[0])
+
+p = [100, ]
+fn2(p)
+print("outside :: ", p[0])
