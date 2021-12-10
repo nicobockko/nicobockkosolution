@@ -1,0 +1,49 @@
+
+import cv2
+
+
+img_color = cv2.imread("D://00/imgtest.jpg")
+
+#이미지 크기조정
+ratio = 3
+img_color = cv2.resize(img_color, (img_color.shape[1]//ratio, img_color.shape[0]//ratio), interpolation=cv2.INTER_LINEAR)
+#바이너리화를 위한 그레이화
+img_gray = cv2.cvtColor(img_color, cv2.COLOR_BGR2GRAY)
+
+#모폴로지
+k = cv2.getStructuringElement(cv2.MORPH_RECT,(6,6))
+#모폴로지 침식
+img_gray = cv2.erode(img_gray,k)
+
+
+#스무딩
+# smoothing
+img_gray = cv2.GaussianBlur(img_gray, (5, 5), 0.0)
+img_gray = cv2.GaussianBlur(img_gray, (5, 5), 0.0)
+
+
+
+#쓰레시홀드 사용 바이너리화
+ret, img_binary = cv2.threshold(img_gray, 127, 255, 0)
+cv2.imshow("img_binary", img_binary)
+cv2.waitKey(0)
+
+
+#컨투어
+contours, hierarchy = cv2.findContours(img_binary, cv2.RETR_LIST, cv2.CHAIN_APPROX_SIMPLE)
+
+
+for cnt in contours:
+    cv2.drawContours(img_color, [cnt], 0, (255, 0, 0), 3)  # blue
+
+print(len(contours))
+for cnt in contours:
+    M = cv2.moments(cnt)
+    if M['m00']==0 : continue
+    cx = int(M['m10'] / M['m00'])
+    cy = int(M['m01'] / M['m00'])
+    cv2.circle(img_color, (cx, cy), 2, (0, 0, 255), -1)
+    print(cy,cx)
+cv2.imshow("result", img_color)
+
+cv2.waitKey(0)
