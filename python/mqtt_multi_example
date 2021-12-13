@@ -1,3 +1,63 @@
+import sys
+import os
+import paho.mqtt.client as mqtt
+import WorkerThread
+import datetime
+from QLed import QLed
+from PyQt5.QtWidgets import *
+from PyQt5.QtWidgets import QMessageBox,QTableWidgetItem,QShortcut
+from PyQt5 import uic
+# from PyQt5.QtGui import QPixmap, QIcon,QKeySequence
+from PyQt5.QtCore import Qt
+
+
+# 과제 1 타이머 수행하기 해서 led 업데이트 하기 8초설정)
+# 과제 2 퍼블리시할때 버튼에 방정보 확인해서 날릴 메시지, 토픽,  정하기
+# 과제 3 퍼블리시 한다음에 리턴값 잘 오는지 확인하기....
+# 과제 4 운영과정에서 오류 (리턴이 안오던지) ( 컨넥션이 끊겼다던지) 확인을 위해 로그를 txt 로그를 남기도록 한다 퍼블리시 마다, listen마다
+
+
+# 모든 슬레이브 들은 Topic+Master 에다가 퍼블리시를 할것이다
+Topic = "hc/ys/gz/"
+Master = "master"
+# room마다 병령을 명령내릴때 Topic +Room+ str(룸번호) 에다 명령 내릴 것이다..
+Room = "room"
+
+form_class = uic.loadUiType("C:/Users/junsik0914.choi/LED_UI_ Practice.ui")[0]
+# def createDirectory(directory):
+#     try:
+#         if not os.path.exists(directory):
+#             os.makedirs(directory)
+#     except OSError:
+#        show_msgbox('디랙토리 생성 실패')
+#
+# def show_msgbox(msg):
+#     myicon = QPixmap()
+#     myicon.load('C:/QCA410/UI/erricon.png')
+#     error_dlg = QMessageBox()
+#     error_dlg.setText(msg)
+#     error_dlg.setWindowTitle('Surprise~!')
+#     error_dlg.setWindowIcon(QIcon(myicon))
+#     error_dlg.setIconPixmap(myicon)
+#     error_dlg.exec()
+# def show_question():
+#     error_dlg = QMessageBox()
+#     result = error_dlg.question(error_dlg,'save to csv', '정말 저장하시겠습니까? \n 저장 후 화면 Data는 사라집니다',
+#                     QMessageBox.Yes | QMessageBox.No)
+#     if result == QMessageBox.Yes:
+#         print("yes")
+#         myWindow.saving()
+#         myWindow.pltvertical.removeWidget(myWindow.p)
+#         myWindow.pltvertical.addWidget(myWindow.p)
+#
+#     else:
+#         print('pass')
+
+class MyWindow(QMainWindow, form_class):
+    def __init__(self):
+        super().__init__()
+        self.setupUi(self)
+        # self.setFixedSize(820,880)
         #함수연결
         self.upper_on1.clicked.connect(self.pub_uon)
         self.upper_off1.clicked.connect(self.pub_uoff)
@@ -5,9 +65,102 @@
         self.led1=QLed(self, onColour=QLed.Green, shape=QLed.Circle)
         self.status1.addWidget(self.led1)
         # self.led1.value= True
-        
         self.upper_on2.clicked.connect(self.pub_uon)
         self.upper_off2.clicked.connect(self.pub_uoff)
         self.lower_onoff2.clicked.connect(self.pub_lonoff)
         self.led2=QLed(self, onColour=QLed.Green, shape=QLed.Circle)
         self.status2.addWidget(self.led2)
+        
+        self.upper_on3.clicked.connect(self.pub_uon)
+        self.upper_off3.clicked.connect(self.pub_uoff)
+        self.lower_onoff3.clicked.connect(self.pub_lonoff)
+        self.led3=QLed(self, onColour=QLed.Green, shape=QLed.Circle)
+        self.status3.addWidget(self.led3)
+        
+        self.upper_on4.clicked.connect(self.pub_uon)
+        self.upper_off4.clicked.connect(self.pub_uoff)
+        self.lower_onoff4.clicked.connect(self.pub_lonoff)
+        self.led4=QLed(self, onColour=QLed.Green, shape=QLed.Circle)
+        self.status4.addWidget(self.led4)
+        
+        self.upper_on5.clicked.connect(self.pub_uon)
+        self.upper_off5.clicked.connect(self.pub_uoff)
+        self.lower_onoff5.clicked.connect(self.pub_lonoff)
+        self.led5=QLed(self, onColour=QLed.Green, shape=QLed.Circle)
+        self.status5.addWidget(self.led5)
+
+        self.upper_on6.clicked.connect(self.pub_uon)
+        self.upper_off6.clicked.connect(self.pub_uoff)
+        self.lower_onoff6.clicked.connect(self.pub_lonoff)
+        self.led6=QLed(self, onColour=QLed.Green, shape=QLed.Circle)
+        self.status6.addWidget(self.led6)
+
+    def pub_uon(self):
+        print("ok")
+    def pub_uoff(self):
+        print("ok")
+    def pub_lonoff(self):
+        print("ok")
+
+
+def on_connect(client, userdata, flags, rc):
+    if rc == 0:
+        print("connected OK")
+    else:
+        print("Bad connection Returned code=", rc)
+
+def on_disconnect(client, userdata, flags, rc=0):
+    print(str(rc))
+
+def on_publish(client, userdata, mid):
+    print("In on_pub callback mid= ", mid)
+
+def on_subscribe(client, userdata, mid, granted_qos):
+    print("subscribed: " + str(mid) + " " + str(granted_qos))
+
+def on_message(client, userdata, msg):
+    #str_msg = str(msg.payload)
+    str_msg = str(msg.payload.decode("utf-8"))
+
+    if "room1_connected" in str_msg :
+        print("led1 timer 업데이트")
+    elif "room2_connected" in str_msg :
+        print("led2 timer 업데이트 ")
+    elif "room3_connected" in str_msg:
+        print("led3 timer 업데이트 ")
+    elif "room4_connected" in str_msg:
+        print("led4 timer 업데이트 ")
+    elif "room5_connected" in str_msg:
+        print("led5 timer 업데이트 ")
+    elif "room6_connected" in str_msg:
+        print("led6 timer 업데이트 ")
+    print("read done")
+
+def mqtt_loop(stop_obj, args):
+
+    client = mqtt.Client()
+    client.on_connect = on_connect
+    client.on_disconnect = on_disconnect
+    client.on_publish = on_publish
+    client.on_subscribe = on_subscribe
+    client.on_message = on_message
+    client.username_pw_set('nicobockko_choIoT', '1234')
+    client.connect('test.mosquitto.org', 1883)
+    client.subscribe(Topic+Master, 2)
+    client.loop_forever()
+
+
+if __name__ == "__main__":
+
+    app = QApplication(sys.argv)
+    app.setStyle("Fusion")
+    myWindow = MyWindow()
+    myWindow.setWindowTitle("gzone_control")
+    myWindow.show()
+
+    # WorkerThread
+    W0 = WorkerThread.create_worker(0)
+    WorkerThread.start_worker(*W0, mqtt_loop, None,
+                              _finished_func=lambda: print("Finished"))
+
+    app.exec_()
