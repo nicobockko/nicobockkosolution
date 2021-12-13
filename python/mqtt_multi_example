@@ -10,6 +10,7 @@ from PyQt5 import uic
 # from PyQt5.QtGui import QPixmap, QIcon,QKeySequence
 from PyQt5.QtCore import Qt
 
+from functools import partial
 
 # 과제 1 타이머 수행하기 해서 led 업데이트 하기 8초설정)
 # 과제 2 퍼블리시할때 버튼에 방정보 확인해서 날릴 메시지, 토픽,  정하기
@@ -59,50 +60,53 @@ class MyWindow(QMainWindow, form_class):
         self.setupUi(self)
         # self.setFixedSize(820,880)
         #함수연결
-        self.upper_on1.clicked.connect(self.pub_uon)
-        self.upper_off1.clicked.connect(self.pub_uoff)
-        self.lower_onoff1.clicked.connect(self.pub_lonoff)
+        self.upper_on1.clicked.connect(partial(self.pub_uon,1))
+        self.upper_off1.clicked.connect(partial(self.pub_uoff,1))
+        self.lower_onoff1.clicked.connect(partial(self.pub_lonoff,1))
         self.led1=QLed(self, onColour=QLed.Green, shape=QLed.Circle)
         self.status1.addWidget(self.led1)
-        # self.led1.value= True
-        self.upper_on2.clicked.connect(self.pub_uon)
-        self.upper_off2.clicked.connect(self.pub_uoff)
-        self.lower_onoff2.clicked.connect(self.pub_lonoff)
+        
+        self.upper_on2.clicked.connect(partial(self.pub_uon,2))
+        self.upper_off2.clicked.connect(partial(self.pub_uoff,2))
+        self.lower_onoff2.clicked.connect(partial(self.pub_lonoff,2))
         self.led2=QLed(self, onColour=QLed.Green, shape=QLed.Circle)
         self.status2.addWidget(self.led2)
         
-        self.upper_on3.clicked.connect(self.pub_uon)
-        self.upper_off3.clicked.connect(self.pub_uoff)
-        self.lower_onoff3.clicked.connect(self.pub_lonoff)
+        self.upper_on3.clicked.connect(partial(self.pub_uon,3))
+        self.upper_off3.clicked.connect(partial(self.pub_uoff,3))
+        self.lower_onoff3.clicked.connect(partial(self.pub_lonoff,3))
         self.led3=QLed(self, onColour=QLed.Green, shape=QLed.Circle)
         self.status3.addWidget(self.led3)
         
-        self.upper_on4.clicked.connect(self.pub_uon)
-        self.upper_off4.clicked.connect(self.pub_uoff)
-        self.lower_onoff4.clicked.connect(self.pub_lonoff)
+        self.upper_on4.clicked.connect(partial(self.pub_uon,4))
+        self.upper_off4.clicked.connect(partial(self.pub_uoff,4))
+        self.lower_onoff4.clicked.connect(partial(self.pub_lonoff,4))
         self.led4=QLed(self, onColour=QLed.Green, shape=QLed.Circle)
         self.status4.addWidget(self.led4)
         
-        self.upper_on5.clicked.connect(self.pub_uon)
-        self.upper_off5.clicked.connect(self.pub_uoff)
-        self.lower_onoff5.clicked.connect(self.pub_lonoff)
+        self.upper_on5.clicked.connect(partial(self.pub_uon,5))
+        self.upper_off5.clicked.connect(partial(self.pub_uoff,5))
+        self.lower_onoff5.clicked.connect(partial(self.pub_lonoff,5))
         self.led5=QLed(self, onColour=QLed.Green, shape=QLed.Circle)
         self.status5.addWidget(self.led5)
-
-        self.upper_on6.clicked.connect(self.pub_uon)
-        self.upper_off6.clicked.connect(self.pub_uoff)
-        self.lower_onoff6.clicked.connect(self.pub_lonoff)
+        
+        self.upper_on6.clicked.connect(partial(self.pub_uon,6))
+        self.upper_off6.clicked.connect(partial(self.pub_uoff,6))
+        self.lower_onoff6.clicked.connect(partial(self.pub_lonoff,6))
         self.led6=QLed(self, onColour=QLed.Green, shape=QLed.Circle)
         self.status6.addWidget(self.led6)
+        
 
-    def pub_uon(self):
-        print("ok")
-    def pub_uoff(self):
-        print("ok")
-    def pub_lonoff(self):
-        print("ok")
+    def pub_uon(self,num):
+        print(str(num),"ok")
 
+    def pub_uoff(self,num):
+        print(str(num),"ok")
 
+    def pub_lonoff(self,num):
+        print(str(num),"ok")
+        
+        
 def on_connect(client, userdata, flags, rc):
     if rc == 0:
         print("connected OK")
