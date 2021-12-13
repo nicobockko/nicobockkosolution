@@ -13,10 +13,9 @@ from PyQt5.QtCore import Qt
 from functools import partial
 
 # 과제 1 타이머 수행하기 해서 led 업데이트 하기 8초설정)
-# 과제 2 퍼블리시할때 버튼에 방정보 확인해서 날릴 메시지, 토픽,  정하기
-# 과제 3 퍼블리시 한다음에 리턴값 잘 오는지 확인하기....
-# 과제 4 운영과정에서 오류 (리턴이 안오던지) ( 컨넥션이 끊겼다던지) 확인을 위해 로그를 txt 로그를 남기도록 한다 퍼블리시 마다, listen마다
-
+# 과제 2 퍼블리시 한다음에 리턴값 잘 오는지 체크는 어쩌지....
+# 과제 3 운영과정에서 오류 (리턴이 안오던지) (컨넥션이 끊겼다던지) 확인을 위해 로그를 txt 로그를 남기도록 한다 퍼블리시 마다, listen마다
+# 과제 4 client를 클래스정의? 같은거 안하고 global 쓰면되는지
 
 # 모든 슬레이브 들은 Topic+Master 에다가 퍼블리시를 할것이다
 Topic = "hc/ys/gz/"
@@ -98,15 +97,17 @@ class MyWindow(QMainWindow, form_class):
         
 
     def pub_uon(self,num):
-        print(str(num),"ok")
+        client.publish(Topic+Room+str(num),"upper_on")
+        print(Topic+Room+str(num),"upper_on")
 
     def pub_uoff(self,num):
-        print(str(num),"ok")
+        client.publish(Topic+Room+str(num),"upper_off")
+        print(Topic+Room+str(num),"upper_off")
 
     def pub_lonoff(self,num):
-        print(str(num),"ok")
-        
-        
+        client.publish(Topic+Room+str(num),"lower_onoff")
+        print(Topic+Room+str(num),"lower_onoff")
+
 def on_connect(client, userdata, flags, rc):
     if rc == 0:
         print("connected OK")
@@ -125,7 +126,6 @@ def on_subscribe(client, userdata, mid, granted_qos):
 def on_message(client, userdata, msg):
     #str_msg = str(msg.payload)
     str_msg = str(msg.payload.decode("utf-8"))
-
     if "room1_connected" in str_msg :
         print("led1 timer 업데이트")
     elif "room2_connected" in str_msg :
@@ -138,10 +138,11 @@ def on_message(client, userdata, msg):
         print("led5 timer 업데이트 ")
     elif "room6_connected" in str_msg:
         print("led6 timer 업데이트 ")
+
     print("read done")
 
 def mqtt_loop(stop_obj, args):
-
+    global client  #이방법맞냐;;
     client = mqtt.Client()
     client.on_connect = on_connect
     client.on_disconnect = on_disconnect
@@ -149,9 +150,14 @@ def mqtt_loop(stop_obj, args):
     client.on_subscribe = on_subscribe
     client.on_message = on_message
     client.username_pw_set('nicobockko_choIoT', '1234')
-    client.connect('test.mosquitto.org', 1883)
-    client.subscribe(Topic+Master, 2)
+    print("connect")
+    # client.connect('test.mosquitto.org', 1883)
+    client.connect('11.99.54.216', 1883)
+    print("done")
+    # client.subscribe(Topic+Master, 2)
+    client.subscribe(Topic+Room+str(1), 2)
     client.loop_forever()
+
 
 
 if __name__ == "__main__":
