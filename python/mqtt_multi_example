@@ -1,0 +1,13 @@
+        #함수연결
+        self.upper_on1.clicked.connect(self.pub_uon)
+        self.upper_off1.clicked.connect(self.pub_uoff)
+        self.lower_onoff1.clicked.connect(self.pub_lonoff)
+        self.led1=QLed(self, onColour=QLed.Green, shape=QLed.Circle)
+        self.status1.addWidget(self.led1)
+        # self.led1.value= True
+        
+        self.upper_on2.clicked.connect(self.pub_uon)
+        self.upper_off2.clicked.connect(self.pub_uoff)
+        self.lower_onoff2.clicked.connect(self.pub_lonoff)
+        self.led2=QLed(self, onColour=QLed.Green, shape=QLed.Circle)
+        self.status2.addWidget(self.led2)
