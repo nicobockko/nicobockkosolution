@@ -1,0 +1,18 @@
+import sys
+from PyQt5.QtWidgets import QApplication
+from PyQt5.QtCore import QTimer
+
+Q=QTimer()
+Q.timeout.connect(lambda: print("Hello~~~!!"))
+Q.setSingleShot(True)
+# Q.start(1000)
+
+def _on_btn(idx):
+    print("Timer Reset")
+    Q.start(1000)
+
+if __name__ == "__main__":
+
+    app = QApplication(sys.argv)
+    _on_btn(0)
+    app.exec_()
