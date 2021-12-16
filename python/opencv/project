@@ -1,0 +1,320 @@
+import os
+import sys
+import pandas as pd
+from PyQt5.QtWidgets import *
+from PyQt5.QtWidgets import QMessageBox,QTableWidgetItem,QListView
+from PyQt5 import uic
+from PyQt5.QtGui import QPixmap, QIcon,QKeySequence,QStandardItemModel,QStandardItem, QPixmap, QIcon,QColor
+import cv2
+import numpy as np
+from PyQt5.QtCore import Qt
+
+form_class = uic.loadUiType("C://.ui")[0]
+
+# 불량 명 리스트업 된거 csv 저장 되도록 할 것
+# TABLE에 ROW를 찍으면 해당 불량위치 하이라이트 표시할 것.......  3중오버레이 해야하나?
+# TABLE에 다른 ROW를 찍으면 불량위치 점표시한거 삭제할 것 -> 이미지 오버레이	cv2.addWeighted(overlay, alpha, output, 1 - alpha,0, output)
+# 최초 사진 인풋되면, 감지한 불량 위치 QTABLE에  리스트업 할것
+# 로그 저장 폴더 만들 것, 시간 포함
+# 이미지 사이즈 조정 좀 적절하게... 되려나
+# advanced는 qpixmap mouse position
+
+def createDirectory(directory):
+    try:
+        if not os.path.exists(directory):
+            os.makedirs(directory)
+    except OSError:
+       show_msgbox('디랙토리 생성 실패')
+def show_msgbox(msg):
+    myicon = QPixmap()
+    myicon.load('C:/FAB_DEF_CALC/erricon.png')
+    error_dlg = QMessageBox()
+    error_dlg.setText(msg)
+    error_dlg.setWindowTitle('Surprise~!')
+    error_dlg.setWindowIcon(QIcon(myicon))
+    error_dlg.setIconPixmap(myicon)
+    error_dlg.exec()
+
+
+class MyWindow(QMainWindow, form_class):
+    def __init__(self):
+        super().__init__()
+        self.setupUi(self)
+
+
+        self.hello = fordrag(self.centralwidget)
+        self.vlay_drag.addWidget(self.hello)
+        self.cid_txt.textChanged.connect(self.cid)
+        self.del_btn.clicked.connect(self.delckd)
+        self.xytable.currentCellChanged.connect(self.getposition)
+        self.xytable.cellClicked.connect(self.getposition)
+
+
+        #Qtable 데이터 복사
+        copyShortcut = QShortcut(QKeySequence.Copy,self.xytable)
+        copyShortcut.activated.connect(self.copy)
+        pasteShortcut = QShortcut(QKeySequence.Paste, self.xytable)
+        pasteShortcut.activated.connect(self.paste)
+
+
+        # 셀 정보 기본값 초기화
+        self.cid_val = 'empty'
+        # 오류방지를 위한 변수 초기화
+        self.rownum = -1
+        self.colnum = 0
+        self.flag=  0
+
+        self.col = ['cell_id','X','Y']
+        self.df = pd.DataFrame(columns=tuple(self.col))
+        self.a = [self.cid_val,"X","Y"]
+
+    def paste(self):
+        text = QApplication.clipboard().text()
+        rows = text.split('\n')
+        numRows = len(rows) - 1
+        numColumns = rows[0].count('\t') + 1
+
+        if self.rownum + numRows > self.xytable.rowCount():
+            prevRowCount = self.xytable.rowCount()
+            self.xytable.setRowCount(self.rownum + numRows)
+            for i in range(prevRowCount, self.rownum + numRows):
+                for kk in range(self.xytable.columnCount()):
+                    item = QTableWidgetItem()
+                    item.setTextAlignment(Qt.AlignRight | Qt.AlignVCenter)
+                    self.xytable.setItem(i, kk, item)
+        for i in range(numRows):
+            columns = rows[i].split('\t')
+            for j in range(numColumns):
+                row = self.rownum + i
+                column = self.colnum + j
+                if column < self.xytable.columnCount():
+                    self.xytable.item(row, column).setText(columns[j])
+        print('paste')
+    def copy(self):
+        selectedRangeList = self.xytable.selectedRanges()
+        if selectedRangeList == [] :
+            return
+        text = ""
+        selectedRange = selectedRangeList[0]
+
+        for i in range(selectedRange.rowCount()):
+            #print(i)
+            if i > 0:
+                text += "\n"
+            for j in range(selectedRange.columnCount()):
+                if j > 0:
+                    text += "\t"
+                itemA = self.xytable.item(selectedRange.topRow()+i,selectedRange.leftColumn()+j)
+                if itemA :
+                    text += itemA.text()
+        text += '\n'
+        QApplication.clipboard().setText(text)
+        print("copy")
+    #오류방지를 위한 변수 초기화
+        self.rownum = -1
+        self.colnum = 0
+        self.flag, self.comflag = 0,0
+    def cid(self):
+        self.cid_val = self.cid_txt.text()
+    def delckd(self):
+        self.flag=1
+        selectedrows = self.xytable.selectedRanges()
+        if selectedrows == [] :
+            return
+        selectedarea = selectedrows[0]
+        top = selectedarea.topRow()
+        if self.rownum > -1:
+            flag = 0
+            rangeflag = 0
+            if (self.rownum == len(self.df.index)-1):
+                flag = 1
+            if selectedarea.rowCount() > 1:
+                rangeflag=selectedarea.rowCount()
+            for i in range(selectedarea.rowCount()):
+                self.df.drop(selectedarea.topRow(), inplace=True)  # df에서 삭제하려는 행 빼버리고
+                self.df.reset_index(drop=True, inplace=True)  # 인덱스 재반영
+            print("range del done")
+            self.xytable.setRowCount(len(self.df.index))  # table에 행 수만큼 길이조정하고
+            for i in range(len(self.df.index)):
+                for j in range(len(self.col)):
+                    self.xytable.setItem(i, j, QTableWidgetItem(str(self.df.loc[i, self.col[j]])))  # 값채워넣고
+            print("self.df.index",len(self.df.index))
+
+            if(flag==1):# 선택된 행이 마지막일때 아마좀 첫번째로 만난 난관이 었을수도
+                print("마지막이었냐?")
+                self.xytable.setCurrentCell(self.rownum , self.colnum)
+
+        else:
+            show_msgbox("더이상 삭제 할 행이 없습니다.")
+        self.flag = 0
+        self.circle_update()
+
+    def circle_update(self):
+        global pixel_size,picture_size,dst_color,paper
+        paper = dst_color.copy()
+        paper.fill(0)
+        print(self.df.index)
+        for i in self.df.index :
+            X_val = self.df.X[i]
+            Y_val = self.df.Y[i]
+            # print("X_val", X_val, " Y_val", Y_val)
+            cal_X = int(((-1) * X_val + pixel_size[0]) * (picture_size[0] / pixel_size[0]))
+            cal_y = int(((-1) * Y_val + pixel_size[1]) * (picture_size[1] / pixel_size[1]))
+            # print("cal_X", cal_X, " cal_y", cal_y)
+            cv2.circle(paper, (cal_X, cal_y), 4, (0, 255, ), 2)
+        added_image = cv2.addWeighted(dst_color, 1, paper, 1, 0)
+        cv2.imshow('detected', added_image)
+
+    def getposition(self):
+        global added_image, paper,dst_color, picture_size, pixel_size
+        print("getposition 호출 ", self.rownum, self.colnum)
+        self.rownum = self.xytable.currentRow()
+        self.colnum = self.xytable.currentColumn()
+        print("값 업뎃", self.rownum, self.colnum)
+        if self.rownum == -1 :return
+        if self.colnum == -1 :return
+        selectedrows = self.xytable.selectedRanges()
+        if selectedrows == [] :
+            return
+        selectedarea = selectedrows[0]
+        top = selectedarea.topRow()
+        pointer = dst_color.copy()
+        pointer.fill(0)
+        if selectedarea.rowCount() == 1:
+            X_val = self.df.X[self.rownum]
+            Y_val = self.df.Y[self.rownum]
+            cal_X = int(((-1) * X_val + pixel_size[0]) * (picture_size[0] / pixel_size[0]))
+            cal_Y = int(((-1) * Y_val + pixel_size[1]) * (picture_size[1] / pixel_size[1]))
+            cv2.circle(pointer, (cal_X, cal_Y), 5, (0, 255, 255), 5)
+        else :
+            if self.flag==1 :
+                pass
+            else:
+                for i in range(selectedarea.rowCount()):
+                    print(selectedarea.rowCount(),"top raw")
+                    X_val = self.df.X[selectedarea.topRow()+i]
+                    Y_val = self.df.Y[selectedarea.topRow()+i]
+                    cal_X = int(((-1) * X_val + pixel_size[0]) * (picture_size[0] / pixel_size[0]))
+                    cal_Y = int(((-1) * Y_val + pixel_size[1]) * (picture_size[1] / pixel_size[1]))
+                    cv2.circle(pointer, (cal_X, cal_Y), 5, (0, 255, 255), 5)
+            print("all")
+        added_image2 = cv2.addWeighted(dst_color, 1, paper, 1, 0)
+        added_image2 = cv2.addWeighted(added_image2, 1, pointer, 1, 0)
+        cv2.imshow('detected', added_image2)
+
+
+
+
+class fordrag(QListView):
+    def __init__(self, title):
+        super().__init__(title)
+        self.setAcceptDrops(True)
+    def dragEnterEvent(self, e):
+        e.acceptProposedAction()
+    def dragMoveEvent(self, e):
+        e.acceptProposedAction()
+    def dropEvent(self, e):
+        global pixel_size, picture_size, added_image,dst_color,pointer
+        try:
+            #이미지들어올때 리셋
+            gui.df = pd.DataFrame(columns=tuple(gui.col))
+            gui.xytable.setRowCount(len(gui.df.index))
+            gui.rownum = -1
+            gui.colnum = 0 #이 거 초기화 안해주면 똑같은파일 두번 올려볼때 오더가 달라지네
+            # gui.flag = 0
+            self.hi = e.mimeData().text().replace('file:///', '')
+            img_color = cv2.imread(self.hi)
+
+            print("인풋 이미지 사이즈 x,y ", len(img_color[0]),len(img_color))
+            # 이미지 크기조정
+            ratio = 4
+            img_color = cv2.resize(img_color, (img_color.shape[1] // ratio, img_color.shape[0] // ratio),
+                                   interpolation=cv2.INTER_LINEAR)
+            # 바이너리화를 위한 그레이화
+            img_gray = cv2.cvtColor(img_color, cv2.COLOR_BGR2GRAY)
+            # 쓰레시홀드 사용 바이너리화 OTSU가 가장 잘맞음
+            ret, img_binary = cv2.threshold(img_gray, 0, 255, cv2.THRESH_BINARY | cv2.THRESH_OTSU)
+            # 큰 컨투어 찾기 컨투어 잡아서 다각형으로 꼭지점 4개 찾기
+            contours, hierarchy = cv2.findContours(img_binary, cv2.RETR_LIST, cv2.CHAIN_APPROX_SIMPLE)
+            for cnt in contours:
+                area = cv2.contourArea(cnt)
+                if area < 10000: continue
+                print("area", area)
+                corners = cv2.approxPolyDP(cnt, 4, True)
+
+            # perspective transform을 위한 꼭지점 오더 맞추기 꼭지점 거리가 가장 가까운 곳을 맞추는 방식
+            findorder = [[0, 0], [img_gray.shape[1], 0], [img_gray.shape[1], img_gray.shape[0]], [0, img_gray.shape[0]]]
+            corners = np.array([np.array(i.ravel()) for i in corners])
+            ordered_corners = []
+
+            for p in findorder:
+                mag = np.linalg.norm((corners - p), axis=1)
+                minid = np.argmin(mag)
+                ordered_corners.append(corners[minid])
+
+            # 꼭지점 을 가지고 변환매트릭스를 얻고 이미지로 적용시킨다
+            M = cv2.getPerspectiveTransform(np.float32(ordered_corners), np.float32(findorder))
+            dst = cv2.warpPerspective(img_binary, M, img_gray.shape[::-1])
+            dst_color = cv2.warpPerspective(img_color, M, img_gray.shape[::-1])
+
+            #detected 이름에 기능 부여하기
+            cv2.namedWindow('detected')  #연결할 윈도우 이름 생성
+            cv2.setMouseCallback('detected', mouseLeftClick) #해당이름 윈도우에 클릭이벤트 연결
+            cv2.moveWindow('detected', 40, 30)  # Move it to (40, 30)
+            cv2.imshow('detected', dst_color)
+
+            # 써클찾기
+            circles = cv2.HoughCircles(dst, cv2.HOUGH_GRADIENT, 1, 100, param1=10, param2=10, minRadius=3, maxRadius=10)
+            circles = np.uint16(np.around(circles))
+            pixel_size = [3840 * 3, 2160]
+            picture_size = [len(img_color[0]), len(img_color)]
+            print("pixel_size", pixel_size, "picture_size", picture_size)
+            print("circles 갯수", len(circles[0]))
+
+            gui.circle_update() #  paper 선언을 위해 끼워넣음
+            for i in circles[0, :]:
+                ajusted_x = int(i[0] / picture_size[0] * pixel_size[0])
+                ajusted_y = int(i[1] / picture_size[1] * pixel_size[1])
+                gui.a = [gui.cid_val, pixel_size[0] - ajusted_x, pixel_size[1] - ajusted_y]
+                gui.df = pd.DataFrame(np.insert(gui.df.values, gui.rownum + 1, gui.a, axis=0), columns=tuple(gui.col))
+                gui.xytable.setRowCount(len(gui.df.index))  # table에 행 수만큼 길이조정하고
+                print(gui.a)
+                for i in range(len(gui.df.index)):
+                    for j in range(len(gui.col)):
+                        gui.xytable.setItem(i, j, QTableWidgetItem(str(gui.df.loc[i, gui.col[j]])))  # 값채워넣고
+                gui.xytable.setCurrentCell(gui.rownum + 1, 0)
+            gui.circle_update()
+        except Exception as e:
+                show_msgbox("에러발생 에러발생"+str(e)+"\n\n 이미지 파일을 확인하세요 \n " )
+
+
+def mouseLeftClick(event, x, y, flags, param):
+    if event == cv2.EVENT_LBUTTONDOWN:
+        print("마우스 이벤트 발생 절대좌표, x:", x, " y:", y)  # 이벤트 발생한 마우스 위치 출력
+        inverted_x = int(x / picture_size[0] * pixel_size[0])
+        inverted_y = int(y / picture_size[1] * pixel_size[1])
+        print("마우스 이벤트 발생 환산좌표, x:", pixel_size[0] - inverted_x, " y:", pixel_size[1] - inverted_y)  # 이벤트 발생한 마우스 위치 출력
+
+        gui.a =[gui.cid_val,pixel_size[0] - inverted_x, pixel_size[1] - inverted_y]
+        gui.df = pd.DataFrame(np.insert(gui.df.values, gui.rownum + 1, gui.a, axis=0), columns=tuple(gui.col))
+        gui.xytable.setRowCount(len(gui.df.index))  # table에 행 수만큼 길이조정하고
+        for i in range(len(gui.df.index)):
+            for j in range(len(gui.col)):
+                gui.xytable.setItem(i, j, QTableWidgetItem(str(gui.df.loc[i, gui.col[j]])))  # 값채워넣고
+        print(gui.df)
+
+        print("아진짜뭐야",gui.rownum, gui.colnum)
+        gui.xytable.setCurrentCell(gui.rownum + 1, 0)
+        print("도대체뭐야",gui.rownum, gui.colnum)
+        gui.circle_update()
+
+if __name__ == "__main__":
+    app = QApplication(sys.argv)
+    app.setStyle("Fusion")
+
+    gui = MyWindow()
+    gui.setWindowTitle("Def_X_Y_Position_Calculator_v0 - Junsik Choi")
+    gui.show()
+
+    app.exec_()
+
