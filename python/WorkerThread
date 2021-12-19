@@ -1,0 +1,128 @@
+import os
+import threading
+import time
+from PySide2 import QtCore
+from PySide2.QtCore import Qt, QThread, QMutex, QWaitCondition, QMutexLocker, QThreadPool
+
+
+class Stop:
+
+    _stop = False
+
+    def __init__(self, _stop, *args, **kwds):
+        self._stop = _stop
+
+    @property
+    def stop(self):
+        if hasattr(self, '_stop'):
+            return self._stop
+        return False
+
+    @stop.setter
+    def stop(self, stop):
+        self._stop = stop
+
+
+class __Worker(QtCore.QObject):
+
+    finished = QtCore.Signal()
+    exception_raised = QtCore.Signal(Exception)
+
+    def __init__(self, *args, **kwds):
+        super().__init__(*args, **kwds)
+        self.is_stop = Stop(False)
+
+    def set_params(self, func, *args):
+        self.func = func
+        self.args = args
+
+    def stop(self):
+        self.is_stop.stop = True
+
+    @QtCore.Slot()
+    def run(self):
+        print("-------------- Worker(%d) Thread is Started!! --------------" % self.id)
+        try:
+            time.sleep(0.15)     # to prepare busy indicator gui init
+            self.func(self.is_stop, *self.args)
+        except Exception as ex:
+            self.exception_raised.emit(ex)
+            return
+        self.finished.emit()
+
+    def set_id(self, id):
+        self.id = id
+
+
+MUTEX = QMutex()
+STOP = False
+
+def get_event():
+    return threading.Event()
+def start_worker(worker, worker_thread, func, *args, _finished_func=None):
+    # clean up
+    global STOP
+    STOP = False
+    try: worker_thread.finished.disconnect()
+    except TypeError: pass
+    except RuntimeError: pass
+    worker_thread.finished.connect(
+        lambda: print("-------------- Worker(%d) Thread is Finished :) --------------" % worker.id))
+    if _finished_func:
+        worker_thread.finished.connect(_finished_func)
+    # run
+    worker.set_params(func, *args)
+    worker.moveToThread(worker_thread)
+    worker_thread.start()
+
+
+EVENT = get_event
+
+
+def _exception(e):
+    raise e
+
+
+def create_worker(idx):
+    _worker = __Worker()
+    _worker.set_id(idx)
+    _worker_thread = QThread()
+    _worker.finished.connect(_worker_thread.quit)
+    _worker.exception_raised.connect(_exception)
+    _worker_thread.started.connect(_worker.run)
+    return _worker, _worker_thread
+
+
+def stop_thread_worker(workers, idx=None):
+    for _w in workers:
+        if idx:
+            if _w[0].id == idx:
+                _w[0].stop()
+                _w[1].quit()
+                _w[1].wait()
+        else:
+            _w[0].stop()
+            _w[1].quit()
+            _w[1].wait()
+
+
+# decorator
+# WORKERS = []
+def release_after_fn(_self):
+    assert hasattr(_self, 'WORKERS'), 'make sure that the self.WORKERS is exist!!'
+    # global WORKERS
+    def _wrapper(fn):
+        def _decorator(*args, **kwds):
+            result = fn(*args, **kwds)
+
+            # after fn
+            for _w in _self.WORKERS:
+                if _w[1].isRunning():
+                    continue
+                _self.WORKERS.remove(_w)
+                del _w
+                print("WORKER IS DELETE!!!")
+
+            return result
+        return _decorator
+    return _wrapper
