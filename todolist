@@ -38,4 +38,36 @@
  cctv프로젝트예제보면됨
 
 
+
+import pandas as pd
+import numpy as np
+
+folder = 'D:///'
+excel_file = folder + 'RO.xlsx'
+
+# 조사할 엑셀 df 생성
+df = pd.read_excel("D:\/.xlsx")
+
+
+df2 = df.values
+copy_np = np.array([])
+
+for row in df2:
+    copy_np = np.append(copy_np,row,axis=0)
+    print(copy_np)
+    # if pd.isna(row[1]):
+    #     print("nan감지")
+    #     continue
+    if int(row[1]) == 4:
+        copy_rows = np.tile(row, (int(row[1]),1))
+
+        # print(np.concatenate((copy_np, copy_rows), axis=0))
+
+        # copy_np = np.append(copy_np, copy_row, axis=0)
+
+# print(copy_np)
+# result = pd.DataFrame(copy_row, columns=df.columns)
+# print(result)
+# result.to_excel("D:\/.xlsx")
+
        
