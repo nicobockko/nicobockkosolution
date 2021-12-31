@@ -60,7 +60,7 @@ class xx ():
             print(text4)
 
         else :
-            text04=" 추가된 Port가 삭제되어 정확한 실행이 안됩니다. 처음부터 다시 하세요"
+            text04=" 추가된 Port가 삭제되어
             self.textAppend(text04)
             print(text04)
             self.xx_port = self.xx_port.drop([0, 6], 0)
@@ -80,7 +80,7 @@ class xx ():
             self.textAppend(text5)
             print(text5)
 
-        # loop through devices, printing vendor and product ids in decimal and hex, 엑스코 실행에서 필요한 명령임.
+        # loop through devices, printing vendor and product ids in decimal and hex, 실행에서 필요한 명령임.
 
         for i in range(len(self.listDevice2)):
             self.dev = self.listDevice2[i]
@@ -108,7 +108,7 @@ class xx ():
 
         else:
             self.new_usb_Connected = ["미연결"]
-            text8 = "신규 xx Download Cable 없습니다.\n보상값 Download는 되지 않습니다.\n장치관리자 확인하세요"
+            text8 = "신규 xx Download Cable 없습니다.\ Download는 되지 않습니다.\n장치관리자 확인하세요"
             self.textAppend(text8)
             print(text8)
             return self.new_usb_Connected
