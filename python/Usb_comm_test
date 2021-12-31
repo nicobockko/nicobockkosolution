@@ -1,0 +1,131 @@
+# ExCO usb를 통해서 다운로드 실행 프로그램
+
+
+#-*- coding: utf-8 -*-
+
+import numpy as np
+import numba as nb
+from numpy import fromfile
+import os
+from os.path import getsize
+import pandas as pd
+import usb.core
+import usb.util
+import time
+
+class X_usb:
+    def __init__(self):
+        pass
+    def usb_start(self, address):
+        global dev
+        self.dev = usb.core.find(idVendor=0xffff, idProduct=0xffff, address=address)
+        self.dev.set_configuration()
+        print("active configuration")
+
+    def X_BinRaw_Download(self,Cellid,rep):
+
+        if rep == 0 :   #  Raw 
+            kind="_"
+            Exco_Target1 = b'\x01\x00\x00\x00\x00\x00\x00\x00\x00\x40\x8f\x03'  # 영역 
+        elif rep == 1 :
+            kind="" #  Raw
+            Exco_Target1 = b'\xff\x00\x00\x00\x00\x00\x00\x00\x00\x40\x8f\xff'  # 영역 
+
+
+        time1 = str(time.strftime('%m-%d', time.localtime(time.time())))  # 
+        self.filename ='C:/test/'+ str(Cellid) +str(kind)+time1+".bin"
+
+        uniq=1   # 동일한 이름이 있는지 확인하고 있으면 ()를 붙여서 만들기
+        while os.path.exists(self.filename): # 동일한 File이 있을 경우
+            self.filename = 'C:/test/'+str(Cellid) +str(kind)+time1+"("+str(uniq)+").bin"
+            uniq+=1
+
+        self.file = open(self.filename, 'wb')
+
+
+        print("Exco_Target: ", Exco_Target1)
+        self.dev.write(0x02, Exco_Target1)
+
+        data = b''
+
+        while True:
+            try:
+                data = self.dev.read(0x82, 512, 100)  # 해당 Device는 Configration에서 입출력 Endpoint 를 넣어야 함
+                self.file.write(data)
+            except usb.core.USBError:
+                break
+
+        self.x_file=self.file.close()
+        print(str(self.filename)+" Bin 파일 다운 완료.")
+
+        return self.filename
+
+
+@nb.njit(nb.uint16[::1](nb.uint8[::1],nb.uint16[::1]),fastmath=True,parallel=True,cache=True)   #mumba jit로 빠른 실행
+def read_uint12_var_2_prealloc(data_chunk, out):
+
+    #ensure that the data_chunk has the right length
+    assert np.mod(data_chunk.shape[0],3)==0
+    assert out.shape[0]==data_chunk.shape[0]//3*2
+
+    for i in nb.prange(data_chunk.shape[0]//3):
+        fst_uint8=np.uint16(data_chunk[i*3])
+        mid_uint8=np.uint16(data_chunk[i*3+1])
+        lst_uint8=np.uint16(data_chunk[i*3+2])
+
+        out[i*2] =  (fst_uint8 ) + ((ff & mid_uint8) << f )       # Bit 연산자 사용  15(00001111)를 사용하여 4자리까지만 앞으로 이동
+        out[i*2+1] = (lst_uint8 << f) + ((fff & mid_uint8) >> f)  # 1111 0000 & 조건으로 뽑아온후 4칸 bit shift
+
+    return out
+
+def load1(file) :    # ExCO Binary File 변환 절차, 첫번째는 Vth 두번째는 모빌리티
+
+    f = open(file, 'rb')
+    fName = os.path.basename(file)
+    f = open(file, 'rb')
+    file_size = getsize(file)
+    excoByteTotal = fromfile(f, "<1B")  # "<1B"
+
+    inf = "\n" + fName + " 파일 변환.\n"
+    print(inf)
+
+    ColorPoint = [0, 8640, 17280]
+    # raw = 25920
+    col = int(2048)
+    row = int((file_size) * (2 / 3) / col)
+    row1 = 2160
+    ColList = ["_Red", "_Green", "_Blue"]
+
+    DecodeFile = np.empty(excoByteTotal.shape[0] // 3 * 2, dtype=np.uint16)  # Decode Array 만들기
+    read_uint12_var_2_prealloc(excoByteTotal, DecodeFile)
+    exco12bitMatrix = DecodeFile.reshape(row, col)  # data size에 따라 Reshape
+
+    # 별 CVS File
+    i = 0
+    for Col in ColorPoint:
+        excoFull = exco12bitMatrix[Col:Col + row1, 0:ffff].copy()  # Array 파싱
+        excoDf = pd.DataFrame(excoFull)
+
+        filename = file[:-4] + ColList[i] + ".csv"
+
+        try:
+            excoDf.to_csv(filename, index=False, header=True)  # 차례로 CSV 파일 만들기  False는 첫 컬럼 안생김
+        except PermissionError:
+            filename = file[:-4] + ColList[i] + str(i) + ".csv"
+            excoDf.to_csv(filename, index=False, header=True)
+
+        print(filename + " 완료")  # 차례로 CSV 파일 만들기
+        filename1 = filename + "완료 "
+        i = i + 1
+
+def main_CSV_Transfer () :
+
+    X_Usb =X_usb()
+    X_Usb.usb_start(48)
+    Bininput=X_Usb.X_BinRaw_Download("Test_Cell")
+    load1(Bininput)
+
+if __name__ == "__main__":
+
+     main_CSV_Transfer()
+
