@@ -1,0 +1,145 @@
+import os
+import sys
+import datetime
+import threading
+
+from PyQt5.QtWidgets import *
+from PyQt5.QtWidgets import QMessageBox
+from PyQt5 import uic
+import pyautogui,keyboard,time
+
+# pyautogui.mouseInfo()
+
+until_date = datetime.datetime(2022, 2,22,20)
+now_date = datetime.datetime.now()
+print(until_date)
+print(now_date)
+
+form_class = uic.loadUiType("C:/chatproblem/myopenchat.ui")[0]
+
+def createDirectory(directory):
+    try:
+        if not os.path.exists(directory):
+            os.makedirs(directory)
+    except OSError:
+       show_msgbox('디랙토리 생성 실패')
+
+def show_msgbox(msg):
+    error_dlg = QMessageBox()
+    error_dlg.setText(msg)
+    error_dlg.setWindowTitle('Surprise~!')
+    error_dlg.exec()
+
+def show_question():
+    error_dlg = QMessageBox()
+    result = error_dlg.question(error_dlg,'save to csv', '정말 저장하시겠습니까? \n 저장 후 화면 Data는 사라집니다',
+                    QMessageBox.Yes | QMessageBox.No)
+    if result == QMessageBox.Yes:
+        print("yes")
+    else:
+        print('pass')
+
+class MyWindow(QMainWindow, form_class):
+    def __init__(self):
+        super().__init__()
+        self.logpath = 'C:/chatproblem'
+        createDirectory(self.logpath)
+        self.setupUi(self)
+        self.stopflag = 0
+        self.tried=0
+        self.entered=0
+
+    #함수연결
+        self.btn_start.clicked.connect(self.execute_start)
+        self.btn_stop.clicked.connect(self.stop)
+        self.password.textChanged.connect(self.get_prd)
+
+    def execute_start(self):
+        th= threading.Thread(target= self.start1)
+        th.start()
+
+    def get_prd(self):
+        self.prd = self.password.text()
+
+    def start1(self):
+        try:
+            if now_date > until_date :
+                print("no")
+                sys.exit()
+            self.tried=0
+            self.entered=0
+            self.stopflag = 0
+            s_x, s_y = pyautogui.position()
+            while not keyboard.is_pressed('shift'):
+                s_x,s_y = pyautogui.position()
+                print(s_x, s_y)
+                time.sleep(0.1)
+            print("start")
+            filepath = self.logpath+"/ppl.png"
+            print(s_x, s_y)
+            pyautogui.screenshot(filepath, region=(s_x-70, s_y, 140, 70))
+            self.max_num = pyautogui.locateOnScreen(filepath)
+            # pyautogui.moveTo(s_x, s_y - 230)#듀얼
+            pyautogui.moveTo(s_x, s_y - 180)
+            pyautogui.leftClick()
+            self.tried=0
+            self.entered=0
+
+            while not self.stopflag:
+                time.sleep(0.1)
+                # pyautogui.moveTo(s_x, s_y - 180)
+                # pyautogui.leftClick()
+                pyautogui.press("enter")
+                self.entered += 1
+
+                self.max_num = pyautogui.locateOnScreen(filepath, grayscale=True)  # ,region=(300,200,400,400))
+
+                if not self.max_num :
+                    self.tried += 1
+                    print("gogogogo")
+                    print(self.max_num)
+
+                    self.max_num = pyautogui.locateOnScreen(filepath)
+                    # max_num = pyautogui.locateOnScreen(filepath,grayscale=True,region=(300,200,400,400))
+                    pyautogui.moveTo(s_x, s_y)
+                    pyautogui.doubleClick()
+                    # pyautogui.moveTo(s_x + 500, s_y + 200) #듀얼
+                    pyautogui.moveTo(s_x + 400, s_y + 160)
+                    pyautogui.leftClick()
+                    time.sleep(0.5)
+                    pyautogui.typewrite(self.prd)
+                    pyautogui.press("enter")
+                    # pyautogui.moveTo(s_x + 500, s_y - 50)#듀얼
+                    pyautogui.moveTo(s_x + 500, s_y - 30)
+                    pyautogui.leftClick()
+                    pyautogui.press("tab")
+                    pyautogui.press("enter")
+                    pyautogui.press("enter")
+                    time.sleep(3)
+                else:
+                    print("nothimg I can do ")
+
+                if keyboard.is_pressed('shift'):
+                    self.stopflag=1
+                    print("break")
+                print("entered= ", self.entered)
+                print("tried =", self.tried)
+                self.lcd_entered.display(self.entered)
+                self.lcd_tried.display(self.tried)
+        except Exception as e:
+                show_msgbox("에러발생 에러발생"+str(e)+"\n \n " )
+
+    def stop(self):
+        self.stopflag=1
+        print("break")
+
+
+if __name__ == "__main__":
+    app = QApplication(sys.argv)
+    # app.setStyle("Fusion")
+    myWindow = MyWindow()
+    myWindow.setWindowTitle("OpenChat Solver v0 - Days")
+    myWindow.show()
+
+
+    app.exec_()
