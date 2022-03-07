@@ -1,45 +1,21 @@
+
 import struct
-# header
-magicCode = 1234
-magicCode = 0x04d2
-pType = 12
-pVer = 1
-# body
-userIp = bytes('192.168.3.101', encoding='UTF-8')
-url = bytes('https://abc.com/def.jsp?param1=test¶m2=ABC', encoding='UTF-8')
-urlLen = len('https://abc.com/def.jsp?param1=test¶m2=ABC')
-userId = bytes('yhkim', encoding='UTF-8')
-userIdLen = len('yhkim')
-values = (magicCode, pType, pVer, userIp, urlLen, url, userIdLen, userId)
-print("values",values)
+sid = 0x100C
 
-fmt = '>I I h 16s I {}s I {}s'.format(urlLen, userIdLen)
-print("fmt",fmt)
+
+import struct
+sid = 0x1021
+data_len = 10
+a = 1
+b = 4095
+c = 4095
+d = 4095
+e = 4095
+values = (sid, data_len, a, b, c, d , e)
+fmt = '>HHHHHHH'
 packer = struct.Struct(fmt)
-print("packer",packer)
-
 sendData = packer.pack(*values)
 print("sendData",sendData)
 
 
-
-
-
-
-
-
-
-
-# import struct
-#
-# sid = 0x1004
-# data_len = 8
-# type = 1
-# red = 4095
-# green = 4095
-# blue = 4095
-# values = (sid, data_len, type, red, green, blue)
-# print("values",values)
-#
-# packer = struct.Struct(bytes(sid))
-# print("packer",packer)
+sid = 0x1022
