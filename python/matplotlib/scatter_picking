@@ -1,0 +1,74 @@
+import numpy as np
+import matplotlib.pyplot as plt
+x_1 = [10.0, 8.0, 13.0, 9.0, 11.0, 14.0, 6.0, 4.0, 12.0, 7.0, 5.0]
+y_1 = [8.04, 6.95, 7.58, 8.81, 8.33, 9.96, 7.24, 4.26, 10.84, 4.82, 5.68]
+x_2 = [10.0, 8.0, 13.0, 9.0, 11.0, 14.0, 6.0, 4.0, 12.0, 7.0, 5.0]
+y_2 = [9.14, 8.14, 8.74, 8.77, 9.26, 8.10, 6.13, 3.10, 9.13, 7.26, 4.74]
+x_3 = [10.0, 8.0, 13.0, 9.0, 11.0, 14.0, 6.0, 4.0, 12.0, 7.0, 5.0]
+y_3 = [7.46, 6.77, 12.74, 7.11, 7.81, 8.84, 6.08, 5.39, 8.15, 6.42, 5.73]
+x_4 = [8.0, 8.0, 8.0, 8.0, 8.0, 8.0, 8.0, 19.0, 8.0, 8.0, 8.0]
+y_4 = [6.58, 5.76, 7.71, 8.84, 8.47, 7.04, 5.25, 12.50, 5.56, 7.91, 6.89]
+
+fig, ax = plt.subplots()
+a=ax.scatter(x_1, y_1, label='First data set')
+ax.scatter(x_2, y_2, label='Second data set')
+leg = ax.legend()
+
+
+# for a in ax.collections: #이건또 레전드가 아니라 데이터 자체네..?
+#     a.set_alpha(0.1)
+#     a.set_picker(True)
+handles, labels = ax.get_legend_handles_labels()
+print(handles,labels)
+print(handles[0].properties()) #이거 왜 레전드가아니라 데이터가나오는거야.
+
+handles[0].set_picker(True)#아래꺼랑동일하잖아 ㅡㅡ
+# for legline in leg.get_paths():
+#     legline.set_picker(True)
+
+# print(leg.get_legend_handler_map())
+# # print(leg)
+# for i in leg.properties():
+#     print(i, leg.properties()[i])
+# for i in ax.properties():
+#     print(i, ax.properties())
+# print(ax.properties())
+
+#여기선 leg.get_lines() 를 하면 왜 레전드내 그래프가 안뜨는걸까
+# print(leg.properties())
+
+
+# print(labels[])
+# print(handles[0].set_visible(False))
+# print(labels[1].set_visible(False))
+# visible = not a.get_visible()
+# a.set_visible(visible)
+
+
+
+
+def on_pick(event):
+    # On the pick event, find the original line corresponding to the legend
+    # proxy line, and toggle its visibility.
+    legline = event.artist #클릭이벤트가 일어난 레전드의 정보를 가저옴
+    print(legline)
+fig.canvas.mpl_connect('pick_event', on_pick)
+# print(len(ax.collections))
+# for i in ax.collections:
+#     print(i.properties())
+
+# for legline, origline in zip(leg.get_lines(), lines):
+#     legline.set_picker(True)  # Enable picking on the legend line.
+#     lined[legline] = origline
+
+
+# for legline, origline in zip(leg.get_lines(), lines):
+#     legline.set_picker(True)  # Enable picking on the legend line.
+#     lined[legline] = origline
+
+ax.set_title("Anscombe's Quartet")
+ax.set_ylabel('Y-Values')
+ax.set_xlabel('X-Values')
+
+
+plt.show()
