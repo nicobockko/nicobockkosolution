@@ -1,0 +1,41 @@
+from PyQt5.QtGui import QGuiApplication
+from PyQt5 import QtGui, QtCore,QtWidgets
+
+app = QtWidgets.QApplication([])
+
+class Test(QtWidgets.QWidget):
+    def __init__(self, parent=None):
+        super(Test, self).__init__(parent)
+
+        self.setLayout(QtWidgets.QVBoxLayout())
+        self.w_edit = QtWidgets.QLineEdit(parent=self)
+        self.w_edit.setModified(True)
+        self.w_edit2 = QtWidgets.QLineEdit(parent=self)
+        self.layout().addWidget(self.w_edit)
+        self.layout().addWidget(self.w_edit2)
+
+        # If we install the event filter and ignore() the ShortcutOverride
+        self.w_edit.installEventFilter(self)
+
+        # Ctrl+V is already in use
+        shortcut = QtWidgets.QShortcut(QtGui.QKeySequence('Ctrl+V'), self)
+        shortcut.activated.connect(self.test_slot)
+
+    def eventFilter(self, source, event):
+        if event.type() == QtCore.QEvent.ShortcutOverride:
+            # filter by source object, source.parent(), or whatever...
+            event.ignore()
+            return True
+        return super(Test, self).eventFilter(source, event)
+
+    def test_slot(self):
+        clipboard = QtWidgets.QApplication.clipboard().text().replace('\n',',')
+        self.w_edit.insert(clipboard)
+        print('ctrl+V pressed!')
+
+
+widget = Test()
+widget.show()
+
+if __name__ == '__main__':
+    app.exec_()
