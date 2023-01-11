@@ -1,0 +1,233 @@
+import sys
+import paho.mqtt.client as mqtt
+import WorkerThread
+from QLed import QLed
+from PyQt5.QtWidgets import *
+from PyQt5 import uic
+from PyQt5.QtCore import QTimer,QThread,QObject,pyqtSignal
+from functools import partial
+import csv
+import datetime
+from time import sleep
+# 시간지나면 led 왜반응안
+# 과제 1 통신이 짧은시간에 여러번 수행되지 않도록 파이썬 에서 delay 주기  파이썬 sleep이슈 해결필요
+# 과제 2 ir 통신 거리문제, 전 원공급문제, onoff 확인 문제로 rs232 포트 활용하는것도 방법
+# 과제 3 퍼블리시 한직후에 응답이 잘왔는지 체크는 어쩌지....
+# 과제 4 운영과정에서 오류 (리턴이 안오던지) (컨넥션이 끊겼다던지) 확인을 위해 로그를 txt 로그를 남기도록 한다 퍼블리시 마다, listen마다
+
+
+# 모든 슬레이브 들은 Topic+Master 에다가 퍼블리시를 할것이다
+Topic = "hc/ys/gz/"
+Master = "master"
+# room마다 명령을 명령내릴때 Topic +Room+ str(룸번호) 에다 명령 내릴 것이다..
+Room = "room"
+
+# form_class = uic.loadUiType("C:/PJT_GOLF_ZONE/Visual/LED_UI_ Practice2.ui")[0]
+form_class = uic.loadUiType("C:/Users//Desktop/LED_UI_ Practice2.ui")[0]
+
+#https://stackoverflow.com/questions/39410037/pyqt-pushbutton-receives-commands-while-disabled
+def except_hook(cls, exception, traceback):
+    sys.__excepthook__(cls, exception, traceback)
+'''
+class Worker(QObject):
+    _finished_ = pyqtSignal()
+    def __init__(self):
+        super().__init__()
+        # self.finished = pyqtSignal()
+        print('class worker init')
+
+    def _run(self):
+        print('Test 1')
+        sleep(3)
+        print('Test 2')
+        self._finished_.emit()
+
+class Threader(QObject):
+    def __init__(self):
+        super().__init__()
+        self.thread = QThread(self)
+        self.worker = Worker()
+        self.worker.moveToThread(self.thread)
+        self.worker._finished_.connect(lambda : print("hohoho"))
+        self.thread.started.connect(lambda : print("hohoho"))
+        # self.thread.started.connect(self.worker._run)
+        print('class threader called')
+
+    def handleFinished(self):
+        print("handleFinished")
+        self.thread.quit()
+        self.thread.wait()
+        myWindow.upper_on1.setEnabled(True)
+
+'''
+class MyWindow(QMainWindow, form_class):
+    def __init__(self):
+        super().__init__()
+        self.setupUi(self)
+        # self.setFixedSize(820,880)
+        # 함수연결
+
+        self.upper_onoff1.clicked.connect(partial(self.pub_uonoff, 1))
+        self.lower_off1.clicked.connect(partial(self.pub_loff, 1))
+        self.lower_on1.clicked.connect(partial(self.pub_lon, 1))
+        self.led1 = QLed(self, onColour=QLed.Green, shape=QLed.Circle)
+        self.status1.addWidget(self.led1)
+        
+        self.upper_onoff2.clicked.connect(partial(self.pub_uonoff, 2))
+        self.lower_off2.clicked.connect(partial(self.pub_loff, 2))
+        self.lower_on2.clicked.connect(partial(self.pub_lon, 2))
+        self.led2 = QLed(self, onColour=QLed.Green, shape=QLed.Circle)
+        self.status2.addWidget(self.led2)
+        
+        
+        self.upper_onoff3.clicked.connect(partial(self.pub_uonoff, 3))
+        self.lower_off3.clicked.connect(partial(self.pub_loff, 3))
+        self.lower_on3.clicked.connect(partial(self.pub_lon, 3))
+        self.led3 = QLed(self, onColour=QLed.Green, shape=QLed.Circle)
+        self.status3.addWidget(self.led3)
+
+        self.upper_onoff4.clicked.connect(partial(self.pub_uonoff, 4))
+        self.lower_off4.clicked.connect(partial(self.pub_loff, 4))
+        self.lower_on4.clicked.connect(partial(self.pub_lon, 4))
+        self.led4 = QLed(self, onColour=QLed.Green, shape=QLed.Circle)
+        self.status4.addWidget(self.led4)
+
+        self.upper_onoff5.clicked.connect(partial(self.pub_uonoff, 5))
+        self.lower_off5.clicked.connect(partial(self.pub_loff, 5))
+        self.lower_on5.clicked.connect(partial(self.pub_lon, 5))
+        self.led5 = QLed(self, onColour=QLed.Green, shape=QLed.Circle)
+        self.status5.addWidget(self.led5)
+
+        self.upper_onoff6.clicked.connect(partial(self.pub_uonoff, 6))
+        self.lower_off6.clicked.connect(partial(self.pub_loff, 6))
+        self.lower_on6.clicked.connect(partial(self.pub_lon, 6))
+        self.led6 = QLed(self, onColour=QLed.Green, shape=QLed.Circle)
+        self.status6.addWidget(self.led6)
+
+
+
+    def pub_uonoff(self, num):
+        client.publish(Topic + Room + str(num), "upper_onoff")
+        print(Topic + Room + str(num), "upper_onoff")
+        # eval('myWindow.upper_on%s' % (num)).setDisabled(True)
+        # print("aa")
+        # th = Threader()
+        # print("th made")
+        # th.thread.start()
+        # print("thread start")
+
+    def pub_lon(self, num):
+        client.publish(Topic + Room + str(num), "lower_on")
+        print(Topic + Room + str(num), "lower_on")
+
+
+    def pub_loff(self, num):
+        client.publish(Topic + Room + str(num), "lower_off")
+        print(Topic + Room + str(num), "lower_off")
+
+
+
+def on_connect(client, userdata, flags, rc):
+    if rc == 0 : print("on_connected OK")
+    else : print("Bad connection Returned code=", rc)
+def on_disconnect(client, userdata, flags, rc=0): print("on_disconnected",str(rc))
+def on_publish(client, userdata, mid): print("on_publish  mid= ", mid)
+def on_subscribe(client, userdata, mid, granted_qos): print("on subscribed: " + str(mid) + " " + str(granted_qos))
+
+click =[5 for _ in range(7)]
+
+def turn_off_led():
+    global click
+    for clicks in range(1,7) :
+        if click[clicks] > 4 : eval('myWindow.led%s'% (clicks)).value = False
+        else :
+            eval('myWindow.led%s'% (clicks)).value = True
+            click[clicks]+=1
+    # print(click)
+
+def on_message(client, userdata, msg):
+    global click
+    str_msg = str(msg.payload.decode("utf-8"))
+    if "room1_is_left_connected" in str_msg:
+        print("led1 timer 업데이트 ")
+        click[1]=0
+    elif "room2_is_left_connected" in str_msg:
+        print("led2 timer 업데이트 ")
+        click[2]=0
+    elif "room3_is_left_connected" in str_msg:
+        print("led3 timer 업데이트 ")
+        click[3]=0
+    elif "room4_is_left_connected" in str_msg:
+        print("led4 timer 업데이트 ")
+        click[4] = 0
+    elif "room5_is_left_connected" in str_msg:
+        print("led5 timer 업데이트 ")
+        click[5] = 0
+    elif "room6_is_left_connected" in str_msg:
+        print("led6 timer 업데이트 ")
+        click[6] = 0
+    # print(str_msg,end=' ' )
+    # print("//read done")
+
+
+#로그용
+'''
+def on_message(client, userdata, msg):
+    #str_msg = str(msg.payload)
+    print("payload!!!")
+    str_msg = str(msg.payload.decode("utf-8"))
+    arr = str_msg.split(';')
+
+    arr = arr[1:]
+
+    if len(arr)==0:
+        arr.append(" ")
+    if len(arr)%2 != 0:
+        arr.append(" ")
+    if len(arr) % 2 != 0:
+        arr.append(" ")
+
+    dt = datetime.datetime.now() #시간 정보 습득
+    filename = 'C:/PJT_GOLF_ZONE/LOG/' + dt.strftime("%Y_%m_%d") #파일 경로와 명 정의
+    csvfile = open(filename + '.csv', 'a', newline='') # 파일만들어버려
+    writer = csv.writer(csvfile)  # 작성자 선언하고
+
+    header = dt.strftime("%H_%M_%S")
+    #writer.writerow([header])
+    arrr=arr.copy()
+
+    writer.writerow(arr3)
+
+    print("OK")
+    csvfile.close()
+'''
+def mqtt_loop(stop_obj, args):
+    global client  # 이방법맞냐;;
+    client = mqtt.Client()
+    client.on_connect = on_connect
+    client.on_disconnect = on_disconnect
+    client.on_publish = on_publish
+    client.on_subscribe = on_subscribe
+    client.on_message = on_message
+    client.username_pw_set('nicobockko_choIoT', '1234')
+    client.connect('broker.mqttdashboard.com', 1883)
+    client.subscribe(Topic+Master)
+    client.loop_forever()
+
+if __name__ == "__main__":
+    sys.excepthook = except_hook#pyqt 에러메시지 표시용
+    app = QApplication(sys.argv)
+    app.setStyle("Fusion")
+    myWindow = MyWindow()
+    myWindow.setWindowTitle("G-Zone_control")
+    myWindow.show()
+    timers = QTimer()
+    timers.timeout.connect( lambda: turn_off_led())
+    timers.start(2000)
+
+    W0 = WorkerThread.create_worker(0)
+    WorkerThread.start_worker(*W0, mqtt_loop, None,
+                              _finished_func=lambda: print("Finished"))
+
+
+    app.exec_()
