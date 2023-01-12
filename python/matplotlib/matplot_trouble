@@ -1,0 +1,120 @@
+            fig.canvas.draw()################ #드로우를해야 ticklabels 네임을가져올수있네?
+            if len(temp_df[sort_col].unique())==1 :ax.set_xticks(temp_df[sort_col].unique())
+            plt.gca().xaxis.set_major_formatter(mdates.DateFormatter('%#m/%#d %#Hhr')) # https://www.enthought.com/blog/no-zero-padding-with-strftime/ #넣어주면 페딩안함 ㅋ아 애초에,  점찍힌곳만 표현하는 ticks가 아니었지..
+            plt.gca().invert_yaxis() # 레전드랑 보기좋게 하기위한 꼼수
+            plt.xticks(rotation=70)
+            plt.tight_layout() #이거 이위치에서 실행안하면 왜 에러나는거야 0 bound 에러 진짜어이없네
+            plt.grid(True, alpha=0.5, linestyle='--')
+            ax.set_yticks(ax.get_yticks())#이함수를 한번 실행해야 레이블 변경이 가능하다 ..  draw를 다시해야하는 병맛이네
+            ax.set_yticklabels([x.get_text() + '\n'+ -[-[''] == x.get_text()][''].values[0] for x in ax.get_yticklabels()],fontsize= 8)
+        
+        
+        
+class MyWindow(QMainWindow, form_class):
+    def __init__(self):
+        global fig,ax,man,cid
+        cid  = None
+        super().__init__()
+        self.setupUi(self)
+        QApplication.processEvents()
+
+        fig, ax = plt.subplots(num='Nothing to draw')
+        print(fig, ax)
+        man = plt.get_current_fig_manager()
+        managers.append(man)
+        self.canvas = FigureCanvas(fig)
+        self.toolbar = NavigationToolbar(self.canvas, self)
+        ax.format_coord = self.format_coord
+        self.pltvertical_2.addWidget(self.toolbar)
+        self.pltvertical.addWidget(self.canvas)
+        # 콤보박스 선택시
+        self.CB_Select.currentTextChanged.connect(self.CB_Select_changed)
+        self.CB_Eqp1.currentTextChanged.connect(self.CB_Eqp1_changed)
+        self.CB_Eqp1_changed()
+        self.Checkbox_SJ.toggled.connect(self.Checkbox_SB_toggled)
+        self.Checkbox_BSJ.toggled.connect(self.Checkbox_SB_toggled)
+        
+    def new_plot(self):
+        try:#!!
+            global fig, ax,man
+            plt.show() #plt.show하면 figure는 1회성으로 인식하여 정보가 날라가 다시그려줘야해  https://jimmy-ai.tistory.com/105
+            # ax.clear()
+            fig, ax = plt.subplots()
+            print(fig,ax)
+            man = plt.get_current_fig_manager()
+            managers.append(man)
+            self.pltvertical.removeWidget(self.canvas)
+            self.pltvertical_2.removeWidget(self.toolbar)
+            self.canvas = FigureCanvas(fig)
+            self.toolbar = NavigationToolbar(self.canvas,self)
+            ax.format_coord = self.format_coord
+            self.pltvertical_2.addWidget(self.toolbar)
+            self.pltvertical.addWidget(self.canvas)
+            QApplication.processEvents() #화면업데이트를 한번 시켜주는거인가본데..?
+            print(fig,ax)
+
+            self.getposition()
+            
+            
+            
+            
+            
+            -----------------------------
+            for (name, group), color in zip(groups, colors):  # 레전드랑 보기좋게 하기위한 꼼수
+                group_scd = group.groupby(shape_col,sort=False)
+                for shape_id,group_ in group_scd:
+                    mylabel = name+' '+shape_id
+                    if shape_id not in shapes_list:
+                        shapes_list.append(shape_id)#
+                    #아 color 랑 shape가 독립?적인경우가있네..markeridx를...변경해야겠어....shape가 언놈은없는경우가있으니까
+                    scat = ax.scatter(group_[sort_col], group_[value],marker=markerdic[shape_id], label=mylabel, s=26, edgecolor='black',color=color,alpha=0.9)  ##################
+                    myscats[mylabel] = scat
+            fig.canvas.draw()################ #드로우를해야 ticklabels 네임을가져올수있네?
+            if len(temp_df[sort_col].unique())==1 :ax.set_xticks(temp_df[sort_col].unique())
+            #여기에서 피킹 개념은, 그냥 handles를 아예 호기명, 레시피명으로만 구성해서 생성해버리고 피킹시 전체탐색하며 적용함,, 쫌바보같아
+            f = lambda m, c, name: ax.plot([], [], picker=True, markeredgecolor='black',label=name, marker=m,markersize=6,ls="none", color=c)[0]#
+            handles = [f("o", colors[i], groups_list[i]) for i in range(len(groups))]
+            handles += [f(markers[i], "k", shapes_list[i]) for i in range(len(shapes_list))]
+            labels = groups_list + shapes_list
+            leg = ax.legend(handles,labels, fontsize=8,loc="upper left", bbox_to_anchor=(1.02, 1))  # 라벨도 꼭넣어야하네
+            mylegscats = {}
+            for legscat in leg.legendHandles :
+                mylegscats[legscat.get_label()] = legscat
+                legscat.set_picker(4)# 숫자의미가  클릭영역 조절
+            stat_shapes_leg = {k:True for k in shapes_list}
+            stat_groups_leg = {k:True for k in groups_list}
+            def on_pick(event):
+                global ax,fig
+                dot_leg = event.artist
+                leg_label = dot_leg.get_label()
+                if leg_label in stat_shapes_leg.keys(): # shape를 클릭한거면
+                    stat_shapes_leg[leg_label] = not stat_shapes_leg[leg_label]
+                    is_visible = True if (dot_leg.get_alpha() == None) or (dot_leg.get_alpha() > 0.5) else False
+                    for s in myscats.values(): # myscats를 돌면서 shape name에 해당하는지 보고 color상태를 체크해서  반영
+                        if (leg_label == s.get_label().split(" ")[-1]) and (stat_groups_leg[s.get_label().split(" ")[0]] is True) :
+                            s.set_alpha(0.05 if is_visible else 0.9)
+                else : #color를선택한거면  myscats를 가져와서  color에 해당하는지# 보고  shape상태를 체크해서  반영
+                    stat_groups_leg[leg_label] = not stat_groups_leg[leg_label] #상태바꿔넣고
+                    is_visible = True if (dot_leg.get_alpha() == None) or (dot_leg.get_alpha() > 0.5) else False
+                    for s in myscats.values():
+                        if (leg_label == s.get_label().split(" ")[0]) and (stat_shapes_leg[s.get_label().split(" ")[-1]] is True):
+                            s.set_alpha(0.05 if is_visible else 0.9)
+                mylegscats[dot_leg.get_label()].set_alpha(0.2 if is_visible else 1.0)
+                self.resize_mangers()
+                for i in event.artist.properties().items():
+                    print(i)
+                fig.canvas.draw()
+
+            if cid != None :
+                fig.canvas.mpl_disconnect(cid)
+            cid = fig.canvas.mpl_connect('pick_event', on_pick)
+
+
+            plt.gca().xaxis.set_major_formatter(mdates.DateFormatter(
+                '%#m/%#d %#Hhr'))  # https://www.enthought.com/blog/no-zero-padding-with-strftime/ #넣어주면 페딩안함 ㅋ아 애초에,  점찍힌곳만 표현하는 ticks가 아니었지..
+            plt.xticks(rotation=70)
+            plt.tight_layout()
+            plt.grid(True, alpha=0.5, linestyle='--')
+            
+        
+        
