@@ -1,0 +1,59 @@
+import getpass
+import os
+import time
+import psutil
+import getmac
+import paho.mqtt.client as mqtt
+
+
+Topic = "hc/ys/gz/"
+
+def on_connect(client, userdata, flags, rc):
+        if rc == 0:print("on_connected OK")
+        else: print("Bad connection Returned code=", rc)
+def on_disconnect(client, userdata, flags, rc=0): print("on_disconnected", str(rc))
+def on_publish(client, userdata, mid): print("on_publish  mid= ", mid)
+try:
+        client = mqtt.Client()
+        client.on_connect = on_connect
+        client.on_disconnect = on_disconnect
+        client.on_publish = on_publish
+        client.connect('broker.mqttdashboard.com', 1883)
+except:
+        print("fail")
+
+
+proc_lst=['empty']
+my_user='empty'
+my_path='empty'
+my_mac='empty'
+mygetmac='empty'
+try:
+        proc_lst = [p.info for p in psutil.process_iter(attrs=['create_time', 'name', ]) if 'chrome' in p.info['name']]
+
+except:
+        print("fail")
+
+try:
+        my_user = getpass.getuser()
+except:
+        print("fail")
+try:
+        my_path = os.path.abspath(__file__)
+except:
+        print("fail")
+
+try:
+        my_mac = getmac.get_mac_address()
+except:
+        print("fail")
+
+
+print(my_path)
+print(my_user)
+print(my_mac)
+msg=','.join([my_user,my_path,my_mac])
+print(msg)
+client.publish(Topic, msg, 1)
+
+time.sleep(10)
