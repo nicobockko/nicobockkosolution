@@ -1,0 +1,77 @@
+from PyQt5.QtWidgets import QTableWidget, QLineEdit, QPushButton, QApplication, QMainWindow, QVBoxLayout, QWidget, QTableWidgetItem
+from PyQt5.QtCore import Qt
+
+import random, string, sys
+
+
+class MainWindow(QMainWindow):
+
+    def __init__(self):
+        super().__init__()
+
+
+        self.query = QLineEdit()
+        self.query.setPlaceholderText("Search...")
+        self.query.textChanged.connect(self.search)
+
+        n_rows = 2
+        n_cols = 2
+
+        self.table = QTableWidget()
+        self.table.setRowCount(n_rows)
+        self.table.setColumnCount(n_cols)
+
+        for c in range(0, n_cols):
+            for r in range(0, n_rows):
+                s = ''.join(random.choice(string.ascii_lowercase) for n in range(10))
+                i = QTableWidgetItem(s)
+                self.table.setItem(c, r, i)
+
+        layout = QVBoxLayout()
+
+        layout.addWidget(self.query)
+        layout.addWidget(self.table)
+
+        w = QWidget()
+        w.setLayout(layout)
+        self.setCentralWidget(w)
+
+    # def search(self, s):
+    #     # Clear current selection.
+    #     self.table.setCurrentItem(None)
+    #
+    #     if not s:
+    #         # Empty string, don't search.
+    #         return
+    #
+    #     matching_items = self.table.findItems(s, Qt.MatchContains)
+    #     if matching_items:
+    #         # We have found something.
+    #         item = matching_items[0]  # Take the first.
+    #         self.table.setCurrentItem(item)
+    def search(self, s):
+
+        #스크롤바가 없어도 동작을하니,
+        #검색한 텍스트가 바뀌었으면,검색을 수행하고
+        # 안바뀌었으면 스크롤바만 넘겨주고,,,
+        # 검색할떄 인덱스를 1개씩 옮겨주라 맥스값도달하면 0으로 초기화해주거나 그냥 나눠주고
+        # Clear current selection.
+        self.table.setCurrentItem(None)
+
+        if not s:
+            # Empty string, don't search.
+            return
+        matching_items = self.table.findItems(s, Qt.MatchContains)
+        print(len(matching_items))
+        if matching_items:
+            # We have found something.
+            for item in matching_items:
+                item.setSelected(True)
+                self.table.verticalScrollBar().setValue(item.row())
+                # self.table.horizontalScrollBar().setValue(item.column())
+
+app = QApplication(sys.argv)
+w = MainWindow()
+w.show()
+
+app.exec_()
