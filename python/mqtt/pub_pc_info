@@ -1,6 +1,7 @@
 import getpass
 import os
 import time
+import datetime
 import psutil
 import getmac
 import paho.mqtt.client as mqtt
@@ -9,10 +10,26 @@ import paho.mqtt.client as mqtt
 Topic = "hc/ys/gz/"
 
 def on_connect(client, userdata, flags, rc):
-        if rc == 0:print("on_connected OK")
-        else: print("Bad connection Returned code=", rc)
-def on_disconnect(client, userdata, flags, rc=0): print("on_disconnected", str(rc))
-def on_publish(client, userdata, mid): print("on_publish  mid= ", mid)
+        if rc == 0:
+                client.connected_flag = True
+                print("on_connected OK")
+        else:
+                client.connected_flag = False
+                print("Bad connection Returned code=", rc)
+def on_disconnect(client, userdata, flags, rc=0):
+        client.connected_flag = False
+        print("on_disconnected", str(rc))
+def on_publish(client, userdata, mid):
+        print("on_publish  mid= ", mid)
+
+## 이 스크립트는, GUI 프로그램에서 버튼을 누를떄마다 PC의 정보를 Publish 하기위한 test 코드이다
+##최대한 메인코드에 영향안주기위해서  모든 함수는 try, except 문으로 작성했다
+## 실제 GUI 프로그램에 적용시 버튼클릭 때마다
+## client.publish(Topic, msg, 1)를 실행할꺼다.
+## 근데???
+## client.connect('broker.mqttdashboard.com', 1883)
+## 이게 서버에 연결하는건데, 뭔가 연결이끊겼을떄 재연결하는 처리가 없는것같다 ㅠ
+
 try:
         client = mqtt.Client()
         client.on_connect = on_connect
@@ -29,8 +46,8 @@ my_path='empty'
 my_mac='empty'
 mygetmac='empty'
 try:
-        proc_lst = [p.info for p in psutil.process_iter(attrs=['create_time', 'name', ]) if 'chrome' in p.info['name']]
-
+        proc_lst = [p.info for p in psutil.process_iter(attrs=['create_time', 'name' ]) if 'chrome' in p.info['name']]
+        print(proc_lst[-1])
 except:
         print("fail")
 
@@ -52,8 +69,16 @@ except:
 print(my_path)
 print(my_user)
 print(my_mac)
+st = time.time()
+
 msg=','.join([my_user,my_path,my_mac])
-print(msg)
+client.loop_start()
 client.publish(Topic, msg, 1)
 
-time.sleep(10)
+time.sleep(3)
+
+while True:
+        t=datetime.datetime.now()
+        # print(t)
+        client.publish(Topic, msg+ ","+str(t), 1)
+        time.sleep(10)
