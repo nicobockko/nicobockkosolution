@@ -1,0 +1,98 @@
+import sys
+import paho.mqtt.client as mqtt
+import WorkerThread
+from QLed import QLed
+from PyQt5.QtWidgets import *
+from PyQt5 import uic
+from PyQt5.QtCore import QTimer, QThread, QObject, pyqtSignal
+from functools import partial
+import csv
+import datetime
+from time import sleep
+
+# 시간지나면 led 왜반응안
+# 과제 1 통신이 짧은시간에 여러번 수행되지 않도록 파이썬 에서 delay 주기  파이썬 sleep이슈 해결필요
+# 과제 2 ir 통신 거리문제, 전 원공급문제, onoff 확인 문제로 rs232 포트 활용하는것도 방법
+# 과제 3 퍼블리시 한직후에 응답이 잘왔는지 체크는 어쩌지....
+# 과제 4 운영과정에서 오류 (리턴이 안오던지) (컨넥션이 끊겼다던지) 확인을 위해 로그를 txt 로그를 남기도록 한다 퍼블리시 마다, listen마다
+
+
+# 모든 슬레이브 들은 Topic+Master 에다가 퍼블리시를 할것이다
+Topic = "hc/ys/gz/"
+Master = "master"
+# room마다 명령을 명령내릴때 Topic +Room+ str(룸번호) 에다 명령 내릴 것이다..
+Room = "room"
+
+# form_class = uic.loadUiType("C:/PJT_GOLF_ZONE/Visual/LED_UI_ Practice2.ui")[0]
+form_class = uic.loadUiType("C:/Users/이현주/Desktop/최준식/LED_UI_ Practice2.ui")[0]
+
+
+# https://stackoverflow.com/questions/39410037/pyqt-pushbutton-receives-commands-while-disabled
+def except_hook(cls, exception, traceback):
+    sys.__excepthook__(cls, exception, traceback)
+
+
+
+class MyWindow(QMainWindow, form_class):
+    def __init__(self):
+        super().__init__()
+        self.setupUi(self)
+
+def on_connect(client, userdata, flags, rc):
+    if rc == 0:
+        client.subscribe(Topic)
+        print("on_connected OK")
+    else:
+        print("Bad connection Returned code=", rc)
+def on_disconnect(client, userdata, flags, rc=0): print("on_disconnected", str(rc))
+def on_publish(client, userdata, mid): print("on_publish  mid= ", mid)
+def on_subscribe(client, userdata, mid, granted_qos): print("on subscribed: " + str(mid) + " " + str(granted_qos))
+
+csvfile = open("C:/test_mqtt/test_mqtt.csv", 'a', encoding='cp949',newline='' )
+#오픈이 된상태여야 로컬로 열었을 때, 읽기전용으로열림
+def on_message(client, userdata, msg):
+    str_msg = str(msg.payload.decode("utf-8"))
+    print(str_msg,end=' ' )
+    # csvfile = open("C:/test_mqtt/test_mqtt.csv", 'a', encoding='cp949',newline='' )
+    writer = csv.writer(csvfile)
+    writer.writerow(str_msg.split(","))
+    # writer.close()
+    print("OK")
+
+def mqtt_loop(stop_obj, args):
+    global client  # 이방법맞냐;;
+    client = mqtt.Client()
+    client.on_connect = on_connect
+    client.on_disconnect = on_disconnect
+    client.on_publish = on_publish
+    client.on_subscribe = on_subscribe
+    client.on_message = on_message
+    client.username_pw_set('nicobockko_choIoT', '1234')
+    client.connect('broker.mqttdashboard.com', 1883)
+    client.loop_forever()
+
+
+if __name__ == "__main__":
+
+
+    sys.excepthook = except_hook  # pyqt 에러메시지 표시용
+    app = QApplication(sys.argv)
+    app.setStyle("Fusion")
+    myWindow = MyWindow()
+    myWindow.setWindowTitle("G-Zone_control")
+    myWindow.show()
+
+    W0 = WorkerThread.create_worker(0)
+    WorkerThread.start_worker(*W0, mqtt_loop, None,
+                              _finished_func=lambda: print("Finished"))
+    # mqtt_loop(None,None)# 이렇게 실행하면 ondisconnect가 잘먹는데,  #쓰레드를돌리면 늦게반응하네머징
+
+    # client = mqtt.Client()
+    # client.on_connect = on_connect
+    # client.on_disconnect = on_disconnect
+    # client.on_publish = on_publish
+    # client.connect('broker.mqttdashboard.com', 1883)
+    # client.publish(Topic+Master, 'room1_is_left_connected', 1)
+
+
+    app.exec_()
