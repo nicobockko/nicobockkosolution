@@ -1,0 +1,135 @@
+import numpy as np
+import cv2
+from matplotlib import pyplot as plt
+
+
+# 입력 이미지 불러오기
+src = cv2.imread('hole_sem_image.png')
+#RGB로 변환
+src = cv2.cvtColor(src, cv2.COLOR_BGR2RGB)
+#그레이화
+gray = cv2.cvtColor(src, cv2.COLOR_BGR2GRAY)
+
+#바이너리화 및 팽+침 왜 OTSU안쓰지
+ret, bimage = cv2.threshold(gray, 220, 255, cv2.THRESH_BINARY_INV)
+bimage = cv2.dilate(bimage, None)
+
+mode = cv2.RETR_LIST
+method = cv2.CHAIN_APPROX_SIMPLE
+contours, hierarchy = cv2.findContours(bimage, mode, method)
+
+lst_cntr_idx=[]
+for i, cnt in enumerate(contours):
+    perimeter = cv2.arcLength(cnt, closed=True)
+    if perimeter>500:
+        lst_cntr_idx.append(i)
+
+print(lst_cntr_idx)
+dst = src.copy()
+
+#컨투어 도넛만들기
+donut = np.zeros(gray.shape,np.uint8)
+cnt_max = contours[max(lst_cntr_idx)]
+cv2.drawContours(donut,[cnt_max],0, (255), -1)
+cnt_min = contours[min(lst_cntr_idx)]
+cv2.drawContours(donut,[cnt_min],0, (0), -1)
+
+
+
+#스켈레톤만들기
+skeleton = np.zeros(donut.shape, dtype='uint8')
+kernel = cv2.getStructuringElement(cv2.MORPH_CROSS, (5, 5))
+# Create an empty output image to hold values
+donut_c = donut.copy()
+# Loop until erosion leads to an empty set
+while (cv2.countNonZero(donut_c) != 0):
+    # Erosion
+    erode = cv2.erode(donut_c, kernel)
+    # Opening on eroded image
+    opening = cv2.morphologyEx(erode, cv2.MORPH_OPEN, kernel)
+    # Subtract these two
+    subset = erode - opening
+    # Union of all previous sets
+    skeleton = cv2.bitwise_or(subset, skeleton)
+    # Set the eroded image for next iteration
+    donut_c = erode.copy()
+    
+    
+# mode = cv2.RETR_EXTERNAL
+# contours, hierarchy = cv2.findContours(skeleton, mode, method)
+# lst_cntr_idx=[]
+# for i, cnt in enumerate(contours):
+#     perimeter = cv2.arcLength(cnt, closed=True)
+#     print(perimeter)
+#     if perimeter>500:
+#         lst_cntr_idx.append(i)
+# print(lst_cntr_idx)
+# cnt_max = contours[max(lst_cntr_idx)]
+# ellipse_max = cv2.fitEllipse(cnt_max)
+
+# #도넛 + 스켈레톤타원 만들기
+# donut_color = donut.copy()
+# donut_color=cv2.cvtColor(donut_color, cv2.COLOR_GRAY2RGB)
+# cv2.ellipse(donut_color, ellipse_max, (0,0,255), 2)
+
+
+#도넛+ 스켈레톤 만들기
+donut_color_skele = donut.copy()
+donut_color_skele=cv2.cvtColor(donut_color_skele, cv2.COLOR_GRAY2RGB)
+skeleton_inv = cv2.bitwise_not(skeleton)
+src1_bg = cv2.bitwise_and(donut_color_skele, donut_color_skele, mask=skeleton_inv)  # 배경에서만 연산 = src1 배경 복사
+# cv2.imshow('src1_bg', src1_bg)
+# cv2.waitKey(0)
+
+
+# #스켈레톤 +스켈레톤 타원만들기
+# skeleton_color = skeleton.copy()
+# skeleton_color=cv2.cvtColor(skeleton_color, cv2.COLOR_GRAY2RGB)
+# cv2.ellipse(skeleton_color, ellipse_max, (0,0,255), 2)
+#
+#
+# #도넛+ 스켈레톤 만들기
+# donut_color_skele = donut.copy()
+# donut_color_skele=cv2.cvtColor(donut_color_skele, cv2.COLOR_GRAY2RGB)
+# skeleton_inv = cv2.bitwise_not(skeleton)
+# src1_bg = cv2.bitwise_and(donut_color_skele, donut_color_skele, mask=skeleton_inv)  # 배경에서만 연산 = src1 배경 복사
+# # cv2.imshow('src1_bg', src1_bg)
+# # cv2.waitKey(0)
+
+
+plt.figure(figsize=(15, 15))
+
+image1 = plt.subplot(3, 2, 1)
+image1.set_title('Original')
+plt.axis('off')
+plt.imshow(src)
+
+image2 = plt.subplot(3, 2, 2)
+image2.set_title('bimage')
+plt.axis('off')
+plt.imshow(bimage, cmap="gray")
+
+image3 = plt.subplot(3, 2, 3)
+image3.set_title('donut') # 도넛
+plt.axis('off')
+plt.imshow(donut,cmap="gray")
+#
+image4 = plt.subplot(3, 2, 4)
+image4.set_title('skeleton') # 스켈레톤
+plt.axis('off')
+plt.imshow(skeleton)
+
+#
+image6 = plt.subplot(3, 2, 5) #도넛 +스켈레톤
+image6.set_title('donut+skele')
+plt.axis('off')
+plt.imshow(src1_bg)
+
+# image5 = plt.subplot(3, 2, 6)
+# image5.set_title('donut+ellips') #도넛 + 스켈레톤 타원
+# plt.axis('off')
+# plt.imshow(donut_color)
+#
+#
+
+plt.show()
