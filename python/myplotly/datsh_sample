@@ -1,0 +1,41 @@
+import dash
+from dash import Dash
+from dash import dcc
+from dash import html
+import plotly.graph_objs as go
+
+#gpt가 짜줬어용
+app = Dash(__name__)
+
+
+def generate_graph():
+    # Generate your graph using Plotly
+    data = [go.Scatter(x=[1, 2, 3], y=[4, 5, 6])]
+    layout = go.Layout(title='Example Graph')
+    fig = go.Figure(data=data, layout=layout)
+
+    # Return the graph component to be displayed in the UI
+    return dcc.Graph(figure=fig)
+
+
+# Create the UI layout
+app.layout = html.Div(children=[
+    html.H1('Graph Display'),
+    html.Button('Generate Graph', id='generate-button'),
+    html.Div(id='graph-container')
+])
+
+
+# Define the callback function to update the graph container
+@app.callback(
+    dash.dependencies.Output('graph-container', 'children'),
+    [dash.dependencies.Input('generate-button', 'n_clicks')]
+)
+def update_graph(n_clicks):
+    if n_clicks is not None and n_clicks > 0:
+        return generate_graph()
+
+
+# Run the application
+if __name__ == '__main__':
+    app.run_server(debug=True)
