@@ -1,0 +1,53 @@
+from dash_extensions.enrich import DashProxy, html, dcc, Input, Output,State
+from dash_extensions import WebSocket
+import json
+
+# Create example app.
+app = DashProxy(prevent_initial_callbacks=True)
+app.layout = html.Div([
+    dcc.Input(id="input", autoComplete="off"),
+    html.Button('확인', id='submit-btn', n_clicks=0),
+    html.Div(id='output-container'),
+    # WebSocket(url="ws://192.168.78.158:5000/ws", id="ws")
+    WebSocket(url="ws://127.0.0.1:5000/ws", id="ws")
+])
+
+
+#ws에게만 전달..그럼 ws가 브로드캐스팅함
+@app.callback(
+    Output("ws", "send"),
+    [Input("submit-btn", "n_clicks")],
+    [State("input", "value")]
+)
+def send(n_clicks,value):
+    data = {'n_clicks': n_clicks, 'value': value}
+    json_data = json.dumps(data, ensure_ascii=False)
+    return json_data
+
+
+#
+n=0
+#ws가 브로드캐스팅 해줌
+@app.callback(
+    Output('output-container', 'children'),
+    [Input("ws", "message")],
+    [State('output-container', 'children')]
+)
+def update_output(message, previous_output):
+    global n
+    n+=1
+    if previous_output is None:
+        previous_output = []  # 초기에 출력 컨테이너가 없으면 빈 리스트를 생성합니다.
+    new_entry = html.Div([
+        html.Span(message['data']),
+        html.Button('좋아요', id={'type': 'like-btn', 'index': n}, n_clicks=0),
+        html.Span(id={'type': 'like-count', 'index': n}, children=0),
+    ])
+    previous_output.append(new_entry)
+        # 최신 10개의 데이터만 유지하기 위해, 11번째 이후 데이터는 첫 번째 데이터부터 삭제합니다.
+    if len(previous_output) > 10:
+        previous_output.pop(0)
+    return previous_output
+
+if __name__ == '__main__':
+    app.run_server(host='127.0.0.1',debug=True)
