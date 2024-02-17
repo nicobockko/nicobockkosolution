@@ -1,0 +1,51 @@
+import sys
+from PyQt5.QtWidgets import QApplication, QWidget
+from PyQt5.QtGui import QPainter, QColor
+from PyQt5.QtCore import Qt, QTimer
+
+class RedDotWidget(QWidget):
+    def __init__(self, file_path):
+        super().__init__()
+
+        self.file_path = file_path
+
+        # 윈도우 속성 설정
+        self.setWindowFlag(Qt.FramelessWindowHint)  # 타이틀 바 없애기
+        self.setAttribute(Qt.WA_TranslucentBackground)  # 배경 투명하게 만들기
+        self.setWindowFlag(Qt.WindowStaysOnTopHint)  # 항상 위에 표시하기
+
+        # 윈도우 크기 및 위치 설정
+        self.setGeometry(800, 50, 20, 20)  # 오른쪽 상단에 위치
+
+        # 타이머 설정
+        self.timer = QTimer(self)
+        self.timer.timeout.connect(self.check_file)
+        self.timer.start(1000)  # 1초마다 파일 체크
+
+        # 초기에 파일 체크 실행
+        self.check_file()
+
+    def check_file(self):
+        try:
+            with open(self.file_path, 'r') as file:
+                last_line = file.readlines()[-1].strip()  # 마지막 줄 읽기
+                print(last_line)
+                if "abc" in last_line:
+                    self.show()  # "abc" 문자열이 있으면 점 표시
+                else:
+                    self.hide()  # "abc" 문자열이 없으면 점 숨김
+        except FileNotFoundError:
+            print(f"File not found: {self.file_path}")
+
+    def paintEvent(self, event):
+        painter = QPainter(self)
+        painter.setRenderHint(QPainter.Antialiasing)  # 안티앨리어싱 설정
+        painter.setBrush(QColor(255, 0, 0))  # 빨간색으로 설정
+        painter.drawEllipse(0, 0, 20, 20)  # 원 그리기
+
+if __name__ == '__main__':
+    app = QApplication(sys.argv)
+    file_path = "your_text_file.txt"  # 텍스트 파일 경로 입력
+    widget = RedDotWidget(file_path)
+    widget.show()
+    sys.exit(app.exec_())
