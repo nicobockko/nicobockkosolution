@@ -1,0 +1,51 @@
+import asyncio
+from functools import partial, wraps
+from quart import Quart, websocket
+
+app = Quart(__name__)
+
+# 사용자를 저장할 딕셔너리
+connected = set()
+
+def collect_websocket(func):
+    @wraps(func)
+    async def wrapper(*args, **kwargs):
+        global connected
+        connected.add(websocket._get_current_object())
+        try:
+            return await func(*args, **kwargs)
+        finally:
+            connected.remove(websocket._get_current_object())
+    return wrapper
+async def broadcast(message):
+    for websock in connected:
+        await websock.send(b'New connection')
+
+
+@app.websocket('/ws')
+@collect_websocket
+async def ws():
+    # connected.add(websocket)
+    print("유저가생겼어요",connected)
+    print(websocket.user_agent)
+    # user = websocket._get_current_object().environment.get('user')
+    # print(user)
+    await websocket.accept()
+    try:
+        while True:
+            message = await websocket.receive()
+            if message:
+                # 모든 연결된 클라이언트에게 메시지를 전송합니다.
+                for idx,user in enumerate(connected):
+                    print(idx,'hoho',user)
+                    await user.send(f"{message}")
+                print('')
+        pass
+    except asyncio.CancelledError:
+        print('클라이언트 연결 끊김')
+    finally:
+        # 연결이 종료되면 사용자를 삭제합니다.
+        # users.remove(user)
+        pass
+if __name__ == '__main__':
+    app.run(host='0.0.0.0',port=5000,debug=True)
