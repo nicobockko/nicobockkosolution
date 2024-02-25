@@ -1,0 +1,106 @@
+# 문제출제...
+
+# 문제 번호는 지정 내가 지정해놓고
+# 페이지 들어오면 아이디 사번 인증 후 세션에 담아놓기 ,
+
+# 사람 마다 정해 놓았던 문제 순번으로 출제
+# 답안 뭘 클릭 했었는지 쿠키에 담아 놓을 수 있으려나?
+
+# 그리구 마지막에 버튼을 클릭하면 문제들에
+# 선택된 value와 문제 번호 들을 세션의 id와 함께 csv파일 저장
+
+
+#주관식은 어쩔건지고민해야겠다. ㅎ
+
+import dash
+from dash import dcc,html, Input, Output, State, ALL
+import dash_bootstrap_components as dbc
+
+import pandas as pd
+
+app = dash.Dash(__name__, external_stylesheets=[dbc.themes.BOOTSTRAP])
+
+
+df = pd.read_excel('문제.xlsx',index_col=0)
+
+객관 = [{'question': row['문제'], 'options': [v for v in row.loc[1:5] if pd.notnull(v)]} for i,row in df[df['유형']!='주관'].iterrows()]
+
+nline ='\n'
+Problem = [ html.Div([
+                html.Div(f"{idx+1}번{nline}{nline} {q['question']}",  style={"white-space": "pre"},className='mb-3'),
+                dbc.RadioItems(
+                    id={'type': 'answer', 'index': idx},
+                    options=[{'label': option, 'value': option} for option in q['options']],
+                    inline=False
+                )
+            ], className='p-3 mb-3 border border-secondary rounded') for idx, q in enumerate(객관)
+        ]
+
+
+app.layout = dbc.Container([
+    html.H1("[Sensor제조기술팀] Python C/D 인증 시험", className='mt-3'),
+    html.Div(id='questions-container',children=Problem),
+    dbc.Button('제출', id='submit-button', color='primary', className='mt-3 mb-3'),
+    html.Div(id='result'),
+    html.Div(id='confirm-submit',
+             children = dcc.ConfirmDialog(
+                                id='confirm',
+                                message='모든 문제를 푸셨습니다. 제출하시겠습니까?',
+                        )
+             )
+])
+
+# 제출 버튼 클릭 이벤트 처리
+@app.callback(
+    Output('result', 'children'),
+    Input('submit-button', 'n_clicks'),
+    [State({'type': 'answer', 'index': ALL}, 'value')],
+    prevent_initial_call=True
+)
+def process_submit(submit_n_clicks,selected_answers):
+    if submit_n_clicks:
+        results = []
+        for idx, answers in enumerate(selected_answers):
+            if answers:
+                pass
+            else:
+                results.append(html.Div(f"문제 {idx + 1}을 풀어주세요."))
+        if results:
+            return html.Div(results)
+        return '풀이 완료'
+
+
+# 제출 버튼 클릭
+@app.callback(
+    Output('confirm', 'displayed', allow_duplicate=True),
+    Input('result', 'children'),
+    prevent_initial_call=True
+)
+def confirm_submit(result):
+    print(result)
+    if result == '풀이 완료':
+        return True
+
+
+@app.callback(Output('result', 'children', allow_duplicate=True),
+              Input('confirm', 'submit_n_clicks'),
+              [State({'type': 'answer', 'index': ALL}, 'value')],
+              prevent_initial_call = True)
+def submit_output(submit_n_clicks,selected_answers):
+    if submit_n_clicks:
+        print('제출 승인')
+        print(selected_answers)
+        return '제출 완료, 수고하셨습니다.'
+
+@app.callback(Output('result', 'children', allow_duplicate=True),
+              Input('confirm', 'cancel_n_clicks'),
+              prevent_initial_call = True)
+def cancel_output(cancel_n_clicks):
+    if cancel_n_clicks:
+        print('제출 취소')
+        return '아직 제출 되지 않았습니다.'
+
+
+
+if __name__ == '__main__':
+    app.run_server(debug=True)
